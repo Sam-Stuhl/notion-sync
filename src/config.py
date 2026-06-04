@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
     canvas_url: str
-    canvas_token: str
+    canvas_access_token: str
     
     notion_access_token: str
     notion_courses_db_id: str
