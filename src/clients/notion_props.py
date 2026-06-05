@@ -134,3 +134,56 @@ def files(items: list[tuple[str, str]]) -> dict:
             for name, url in items
         ]
     }
+    
+# ---------- Property Reading ----------
+
+def read_title(props: dict, prop_name: str) -> str:
+    return "".join(r["plain_text"] for r in props[prop_name]["title"])
+
+def read_rich_text(props: dict, prop_name: str) -> str:
+    return "".join(r["plain_text"] for r in props[prop_name]["rich_text"])
+
+def read_number(props: dict, prop_name: str) -> Optional[Union[int, float]]:
+    return props[prop_name]["number"]
+
+def read_checkbox(props: dict, prop_name: str) -> bool:
+    return props[prop_name]["checkbox"]
+
+def read_url(props: dict, prop_name: str) -> Optional[str]:
+    return props[prop_name]["url"]
+
+def read_email(props: dict, prop_name: str) -> Optional[str]:
+    return props[prop_name]["email"]
+
+def read_phone_number(props: dict, prop_name: str) -> Optional[str]:
+    return props[prop_name]["phone_number"]
+
+def read_select(props: dict, prop_name: str) -> Optional[str]:
+    sel = props[prop_name]["select"]
+    return sel["name"] if sel else None
+
+def read_multi_select(props: dict, prop_name: str) -> list[str]:
+    return [o["name"] for o in props[prop_name]["multi_select"]]
+
+def read_status(props: dict, prop_name: str) -> Optional[str]:
+    st = props[prop_name]["status"]
+    return st["name"] if st else None
+
+def read_date(props: dict, prop_name: str) -> tuple[Optional[str], Optional[str]]:
+    d = props[prop_name]["date"]
+    if d is None:
+        return (None, None)
+    return (d.get("start"), d.get("end"))
+
+def read_relation(props: dict, prop_name: str) -> list[str]:
+    return [r["id"] for r in props[prop_name]["relation"]]
+
+def read_people(props: dict, prop_name: str) -> list[str]:
+    return [u["id"] for u in props[prop_name]["people"]]
+
+def read_files(props: dict, prop_name: str) -> list[tuple[str, str]]:
+    return [
+        (f["name"], f["external"]["url"])
+        for f in props[prop_name]["files"]
+        if f.get("type") == "external"
+    ]

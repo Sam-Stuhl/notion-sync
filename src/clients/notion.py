@@ -118,6 +118,7 @@ if __name__ == "__main__":
     
     
     #pprint(notion.query_data_source(settings.notion_tasks_ds_id))
+    pprint(notion.query_data_source(settings.notion_courses_ds_id))
     
     properties = {'Application': {'has_more': False,
                                  'id': 'HsAm',
