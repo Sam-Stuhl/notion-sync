@@ -42,7 +42,7 @@ def sync_assignments(external: ExternalClient, notion: NotionClient) -> list[dic
     return results
 
 
-def sync_assignments_for_course(external: ExternalClient, notion: NotionClient, course_id: str, semester_notion_id: Optional[str] = None) -> list[dict]:
+def sync_assignments_for_course(external: ExternalClient, notion: NotionClient, course_id: str) -> list[dict]:
     """Discover assignments from specified course from external connection and upsert into notion
 
     Returns:
@@ -52,6 +52,8 @@ def sync_assignments_for_course(external: ExternalClient, notion: NotionClient, 
     if not course_page:
         return []
     course_notion_id = course_page["id"]
+    semester_ids = notion_props.read_relation(course_page["properties"], "Semester")
+    semester_notion_id = semester_ids[0] if semester_ids else None
 
     results = []
     for assignment in external.get_assignments(course_id):

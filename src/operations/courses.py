@@ -48,7 +48,7 @@ def sync_courses(external: ExternalClient, notion: NotionClient, semester_page_i
         results.append(result)
 
         if sync_assignments:
-            sync_assignments_for_course(external, notion, course.id, semester_page_id)
+            sync_assignments_for_course(external, notion, course.id)
 
     return results
 
