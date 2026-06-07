@@ -7,10 +7,10 @@ from src.operations.courses import sync_courses
 
 router = APIRouter()
 
-def _run(term: str | None):
+def _run():
     canvas = CanvasClient()
     notion = NotionClient()
-    sync_courses(canvas, notion, term=term)
+    sync_courses(canvas, notion)
 
 @router.post("/sync-courses")
 async def handle_sync_courses(
@@ -20,5 +20,5 @@ async def handle_sync_courses(
     if authorization != f"Bearer {settings.webhook_secret}":
         raise HTTPException(status_code=401)
 
-    background_tasks.add_task(_run, term=None)
+    background_tasks.add_task(_run)
     return {"status": "queued"}

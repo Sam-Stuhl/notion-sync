@@ -28,38 +28,28 @@ def _external_course_to_notion_props(ex_course: ExternalCourse, semester_notion_
 
 
 # --- Main ---
-def sync_courses(external: ExternalClient, notion: NotionClient, term: Optional[str] = None, sync_assignments: bool = True) -> list[dict]:
+def sync_courses(external: ExternalClient, notion: NotionClient, semester_page_id: Optional[str] = None, sync_assignments: bool = True) -> list[dict]:
     """Discover Courses from external connection and upsert into notion
-
-    Args:
-        external (ExternalClient): _description_
-        notion (NotionClient): _description_
-        term (Optional[str]): _description_
 
     Returns:
         list[dict]: A list of dictionaries with the output from being upserted into notion. \nStructure: {"page": properties dict of existing or created page, "was_created": boolean}
     """
-    
+
     ex_courses = external.get_active_courses()
 
     results = []
     for course in ex_courses:
-        term_name = term or course.term_name
-        semester_page = notion.get_page_by_title(settings.notion_semesters_ds_id, "Term", term_name) if term_name else None
-        semester_notion_id = semester_page["id"] if semester_page else None
-
         result = notion.upsert_by_source(
             ds_id=settings.notion_courses_ds_id,
             source=external.source_name,
             external_id=course.id,
-            properties=_external_course_to_notion_props(course, semester_notion_id),
+            properties=_external_course_to_notion_props(course, semester_page_id),
         )
         results.append(result)
-        
-        # Sync assignments for course
+
         if sync_assignments:
-            sync_assignments_for_course(external, notion, course.id, semester_notion_id)
-            
+            sync_assignments_for_course(external, notion, course.id, semester_page_id)
+
     return results
 
 

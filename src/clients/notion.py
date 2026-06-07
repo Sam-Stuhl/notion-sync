@@ -1,4 +1,5 @@
 from notion_client import Client, collect_paginated_api
+from typing import Optional
 
 from src.config import settings
 from src.clients.notion_props import rich_text, select, title
@@ -7,7 +8,7 @@ class NotionClient:
     def __init__(self):
         self._client = Client(auth=settings.notion_access_token)
         
-    def query_data_source(self, ds_id: str, filter_dict: dict = None, sorts_dict: list = None) -> list:
+    def query_data_source(self, ds_id: str, filter_dict: Optional[dict] = None, sorts_dict: Optional[dict] = None) -> list:
         """Get pages in data source
 
         Returns:
@@ -45,6 +46,18 @@ class NotionClient:
         
         return page
     
+    def update_view(self, view_id: str, filter_dict: dict, sorts_dict: Optional[dict] = None) -> dict:
+        """Updates a views filters and sorts
+
+        Returns:
+            dict: Simple dict containing mainly the id of the updated view with its parent 
+        """
+        kwargs = {}
+        if sorts_dict:
+            kwargs["sorts"] = sorts_dict
+        
+        return self._client.views.update(view_id=view_id, filter=filter_dict, **kwargs)
+
     def get_page(self, page_id: str) -> dict:
         """Get page as dict
 
