@@ -54,6 +54,32 @@ class NotionClient:
         
         return self._client.pages.retrieve(page_id=page_id)
     
+    def get_page_by_title(self, ds_id: str, title_prop: str, title_value: str) -> dict | None:
+        """Look up a single page by a title property value.
+
+        Returns:
+            dict: The page, or None if not found.
+        """
+        pages = self._client.data_sources.query(ds_id, filter={
+            "property": title_prop,
+            "title": {"equals": title_value},
+        })["results"]
+        return pages[0] if pages else None
+
+    def get_page_by_source(self, ds_id: str, source: str, external_id: str) -> dict | None:
+        """Look up a single page by (Source, External ID) composite key.
+
+        Returns:
+            dict: The page, or None if not found.
+        """
+        pages = self._client.data_sources.query(ds_id, filter={
+            "and": [
+                {"property": "Source", "select": {"equals": source}},
+                {"property": "External ID", "rich_text": {"equals": external_id}},
+            ]
+        })["results"]
+        return pages[0] if pages else None
+
     def upsert_by_source(self, ds_id: str, source: str, external_id: str, properties: dict) -> dict:
         """Upsert a Notion page by (Source, External ID) composite key — update if it exists, create if it doesn't. Raises if multiple matches found.
 
@@ -118,7 +144,8 @@ if __name__ == "__main__":
     
     
     #pprint(notion.query_data_source(settings.notion_tasks_ds_id))
-    pprint(notion.query_data_source(settings.notion_courses_ds_id))
+    #pprint(notion.query_data_source(settings.notion_courses_ds_id))
+    pprint(notion.query_data_source(settings.notion_semesters_ds_id))
     
     properties = {'Application': {'has_more': False,
                                  'id': 'HsAm',
