@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     notion_semesters_ds_id: str
     webhook_secret: str
     
+    database_url: str
+    encryption_key: str
+
     log_level: str = "INFO"
 
 settings = Settings()  # raises on startup if anything's missing
