@@ -1,0 +1,164 @@
+{
+  "tasks_ds": [
+    {
+      "type": "block",
+      "block_type": "toggle",
+      "text": "⚙️ Databases",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Tasks",
+      "index": 0
+    },
+    {
+      "type": "data_source",
+      "name": "Tasks"
+    }
+  ],
+  "courses_ds": [
+    {
+      "type": "block",
+      "block_type": "toggle",
+      "text": "⚙️ Databases",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Courses",
+      "index": 1
+    },
+    {
+      "type": "data_source",
+      "name": "Courses"
+    }
+  ],
+  "view_upcoming": [
+    {
+      "type": "block",
+      "block_type": "column_list",
+      "text": "",
+      "index": 1
+    },
+    {
+      "type": "block",
+      "block_type": "column",
+      "text": "",
+      "index": 2
+    },
+    {
+      "type": "block",
+      "block_type": "callout",
+      "text": "Upcoming",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Untitled",
+      "index": 0
+    },
+    {
+      "type": "view",
+      "name": "Upcoming"
+    }
+  ],
+  "view_calendar": [
+    {
+      "type": "block",
+      "block_type": "callout",
+      "text": "Calendar",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Untitled",
+      "index": 0
+    },
+    {
+      "type": "view",
+      "name": "Calendar"
+    }
+  ],
+  "view_courses": [
+    {
+      "type": "block",
+      "block_type": "callout",
+      "text": "Courses",
+      "index": 1
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Untitled",
+      "index": 0
+    },
+    {
+      "type": "view",
+      "name": "Courses"
+    }
+  ],
+  "tasks_db": [
+    {
+      "type": "block",
+      "block_type": "toggle",
+      "text": "⚙️ Databases",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Tasks",
+      "index": 0
+    }
+  ],
+  "courses_db": [
+    {
+      "type": "block",
+      "block_type": "toggle",
+      "text": "⚙️ Databases",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Courses",
+      "index": 1
+    }
+  ],
+  "semesters_db": [
+    {
+      "type": "block",
+      "block_type": "toggle",
+      "text": "⚙️ Databases",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Semesters",
+      "index": 2
+    }
+  ],
+  "semesters_ds": [
+    {
+      "type": "block",
+      "block_type": "toggle",
+      "text": "⚙️ Databases",
+      "index": 0
+    },
+    {
+      "type": "block",
+      "block_type": "child_database",
+      "text": "Semesters",
+      "index": 2
+    },
+    {
+      "type": "data_source",
+      "name": "Semesters"
+    }
+  ]
+}
