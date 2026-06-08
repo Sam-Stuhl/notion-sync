@@ -5,8 +5,10 @@ from src.config import settings
 from src.clients.notion_props import rich_text, select, title
 
 class NotionClient:
-    def __init__(self):
-        self._client = Client(auth=settings.notion_access_token)
+    def __init__(self, token: Optional[str] = None):
+        if token is None:
+            token = settings.notion_access_token
+        self._client = Client(auth=token)
         
     def query_data_source(self, ds_id: str, filter_dict: Optional[dict] = None, sorts_dict: Optional[dict] = None) -> list:
         """Get pages in data source

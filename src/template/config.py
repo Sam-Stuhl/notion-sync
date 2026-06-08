@@ -1,7 +1,16 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
 
 @dataclass
-class TemplateSettings():
+class ViewConfig:
+    view_id: str
+    name: str
+    semester_prop_id: str
+    base_conditions: list = field(default_factory=list)
+
+
+@dataclass
+class TemplateSettings:
     root_page_id: str = "36e4330f6a0481489123f2c0fc7fd207"
 
     template_courses_db_id: str = "48bde807520f432ba1c43b9ed087b3f8"
@@ -15,5 +24,33 @@ class TemplateSettings():
     template_hub_upcoming_view_id: str = "36e4330f-6a04-8139-b97f-000c8e3becdd"
     template_hub_calendar_view_id: str = "36e4330f-6a04-8116-af68-000c83b0c36d"
     template_hub_courses_view_id: str = "36f4330f-6a04-81ee-b2f1-000cb6447ef5"
+
+
+VIEWS: list[ViewConfig] = [
+    ViewConfig(
+        view_id="36e4330f-6a04-8139-b97f-000c8e3becdd",
+        name="hub Upcoming",
+        semester_prop_id="yJtY",
+        base_conditions=[
+            {"property": "x][X", "checkbox": {"does_not_equal": True}},
+            {"property": ";emV", "date": {"on_or_before": "one_week_from_now"}},
+            {"property": ";emV", "date": {"on_or_after": "one_week_ago"}},
+        ],
+    ),
+    ViewConfig(
+        view_id="36e4330f-6a04-8116-af68-000c83b0c36d",
+        name="hub Calendar",
+        semester_prop_id="yJtY",
+        base_conditions=[
+            {"property": "x][X", "checkbox": {"does_not_equal": True}},
+        ],
+    ),
+    ViewConfig(
+        view_id="36f4330f-6a04-81ee-b2f1-000cb6447ef5",
+        name="hub Courses",
+        semester_prop_id="<YbE",
+        base_conditions=[],
+    ),
+]
 
 template_settings = TemplateSettings()

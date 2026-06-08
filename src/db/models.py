@@ -24,7 +24,7 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     notion_integrations: Mapped[list["NotionIntegration"]] = relationship(back_populates="user")
-    external_integrations: Mapped[list["ExternalIntegration"]] = relationship(back_populates="user")
+    sis_integrations: Mapped[list["SISIntegration"]] = relationship(back_populates="user")
     workspace_configs: Mapped[list["WorkspaceConfig"]] = relationship(back_populates="user")
     sync_runs: Mapped[list["SyncRun"]] = relationship(back_populates="user")
 
@@ -47,8 +47,8 @@ class NotionIntegration(Base):
     workspace_config: Mapped[Optional["WorkspaceConfig"]] = relationship(back_populates="notion_integration")
 
 
-class ExternalIntegration(Base):
-    __tablename__ = "external_integrations"
+class SISIntegration(Base):
+    __tablename__ = "sis_integrations"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
@@ -65,8 +65,8 @@ class ExternalIntegration(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates="external_integrations")
-    sync_runs: Mapped[list["SyncRun"]] = relationship(back_populates="external_integration")
+    user: Mapped["User"] = relationship(back_populates="sis_integrations")
+    sync_runs: Mapped[list["SyncRun"]] = relationship(back_populates="sis_integration")
 
 
 class WorkspaceConfig(Base):
@@ -101,7 +101,7 @@ class SyncRun(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    external_integration_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("external_integrations.id"), index=True)
+    sis_integration_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("sis_integrations.id"), index=True)
     operation: Mapped[Optional[str]] = mapped_column(Text)
     triggered_by: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[Optional[str]] = mapped_column(Text)
@@ -115,4 +115,4 @@ class SyncRun(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="sync_runs")
-    external_integration: Mapped[Optional["ExternalIntegration"]] = relationship(back_populates="sync_runs")
+    sis_integration: Mapped[Optional["SISIntegration"]] = relationship(back_populates="sync_runs")

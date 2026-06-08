@@ -1,24 +1,30 @@
 from canvasapi import Canvas, calendar_event
 from datetime import datetime
+from typing import Optional
 
-from src.clients.external_client import ExternalClient, ExternalCourse, ExternalAssignment
+from src.clients.sis_client import SISClient, SISCourse, SISAssignment, register
 from src.config import settings
 
-class CanvasClient(ExternalClient):
+@register("canvas")
+class CanvasClient(SISClient):
     source_name = "Canvas"
     
-    def __init__(self):
-        self._client = Canvas(settings.canvas_url, settings.canvas_access_token)
+    def __init__(self, url: Optional[str] = None, token: Optional[str] = None):
+        if url is None:
+            url = settings.canvas_url
+        if token is None:
+            token = settings.canvas_access_token
+        self._client = Canvas(url, token)
         self.user = self._client.get_current_user()
         
-    def get_active_courses(self) -> list[ExternalCourse]:
+    def get_active_courses(self) -> list[SISCourse]:
         raw = self._client.get_courses(
             enrollment_state="active",
             include=["term", "syllabus_body", "teachers"],
         )
         return [self._to_course(c) for c in raw]
 
-    def get_assignments(self, course_external_id: str) -> list[ExternalAssignment]:
+    def get_assignments(self, course_external_id: str) -> list[SISAssignment]:
         course = self._client.get_course(int(course_external_id))
         raw = course.get_assignments(include=["submission"])
         return [self._to_assignment(a, course_external_id) for a in raw]
@@ -45,11 +51,11 @@ class CanvasClient(ExternalClient):
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
     @staticmethod
-    def _to_course(c) -> ExternalCourse:
+    def _to_course(c) -> SISCourse:
         teachers = getattr(c, "teachers", []) or []
         professor = teachers[0].get("display_name") if teachers else None
         term = getattr(c, "term", {}) or {}
-        return ExternalCourse(
+        return SISCourse(
             id=str(c.id),
             name=c.name,
             code=c.course_code,
@@ -59,12 +65,12 @@ class CanvasClient(ExternalClient):
         )
 
     @staticmethod
-    def _to_assignment(a, external_course_id: str) -> ExternalAssignment:
+    def _to_assignment(a, sis_course_id: str) -> SISAssignment:
         submission = getattr(a, "submission", None) or {}
         is_submitted = submission.get("workflow_state") in ("submitted", "graded")
-        return ExternalAssignment(
+        return SISAssignment(
             id=str(a.id),
-            external_course_id=external_course_id,
+            sis_course_id=sis_course_id,
             name=a.name,
             due_at=CanvasClient._parse_iso(a.due_at),
             points_possible=a.points_possible,
