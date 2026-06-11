@@ -2,7 +2,8 @@ from notion_client import Client, collect_paginated_api
 from typing import Optional
 
 from src.config import settings
-from src.clients.notion_props import rich_text, select, title
+from src.clients.notion_props import read_rich_text, rich_text, select, title
+
 
 class NotionClient:
     def __init__(self, token: Optional[str] = None):
@@ -81,6 +82,44 @@ class NotionClient:
         })["results"]
         return pages[0] if pages else None
 
+    def get_pages_by_source(self, ds_id: str, source: str) -> dict[str, dict]:
+        """Bulk-fetch all pages for a given source. Returns {external_id: page}."""
+        pages = collect_paginated_api(
+            self._client.data_sources.query,
+            data_source_id=ds_id,
+            filter={"property": "Source", "select": {"equals": source}},
+        )
+        result: dict[str, dict] = {}
+        for page in pages:
+            props = page.get("properties", {})
+            try:
+                ext_id = read_rich_text(props, "External ID")
+                if ext_id:
+                    result[ext_id] = page
+            except (KeyError, TypeError):
+                pass
+        return result
+
+    def create_sourced_page(
+        self, ds_id: str, source: str, external_id: str, properties: dict
+    ) -> dict:
+        """Create a page with Source + External ID automatically included."""
+        return self.create_page(ds_id, {
+            **properties,
+            "Source": select(source),
+            "External ID": rich_text(external_id),
+        })
+
+    def update_sourced_page(
+        self, page_id: str, source: str, external_id: str, properties: dict
+    ) -> dict:
+        """Update a page with Source + External ID automatically included."""
+        return self.update_page(page_id, {
+            **properties,
+            "Source": select(source),
+            "External ID": rich_text(external_id),
+        })
+
     def get_page_by_source(self, ds_id: str, source: str, external_id: str) -> dict | None:
         """Look up a single page by (Source, External ID) composite key.
 
@@ -95,55 +134,48 @@ class NotionClient:
         })["results"]
         return pages[0] if pages else None
 
-    def upsert_by_source(self, ds_id: str, source: str, external_id: str, properties: dict) -> dict:
-        """Upsert a Notion page by (Source, External ID) composite key — update if it exists, create if it doesn't. Raises if multiple matches found.
+    def upsert_by_source(
+        self,
+        ds_id: str,
+        source: str,
+        external_id: str,
+        properties: dict,
+        create_only_props: dict | None = None,
+        stored_hash: str | None = None,
+        new_hash: str | None = None,
+    ) -> dict | None:
+        """Upsert a Notion page by (Source, External ID) composite key.
 
-        Returns:
-            dict: Dictionary containing the upserted page with key "page" and a "was_created" flag
-            indicating whether the page was newly created (True) or updated (False).
+        Returns None if the page exists and stored_hash == new_hash (nothing to write).
+        Returns {"page": ..., "was_created": bool} otherwise.
         """
-        was_created = False
-        
         _filter = {
             "and": [
-                {
-                    "property": "Source",
-                    "select": {"equals": source}
-                },
-                {
-                    "property": "External ID",
-                    "rich_text": {"equals": external_id}
-                }
+                {"property": "Source", "select": {"equals": source}},
+                {"property": "External ID", "rich_text": {"equals": external_id}},
             ]
         }
-        
         _properties = {
             **properties,
             "Source": select(source),
-            "External ID": rich_text(external_id)
+            "External ID": rich_text(external_id),
         }
-        
+
         pages = self._client.data_sources.query(ds_id, filter=_filter)["results"]
-        
-        upserted_page = {}
-            
-          
-        if len(pages) > 1: # Raise Exception if multiple pages match
+
+        if len(pages) > 1:
             raise RuntimeError(
                 f"Composite key collision in {ds_id}: "
                 f"found {len(pages)} pages matching Source={source!r}, External ID={external_id!r}"
-            )  
-        elif not pages: # Insert new page if none exist
-            upserted_page = self.create_page(ds_id, _properties)
-            was_created = True
-        else: # Update pages if they exist
-            upserted_page = self.update_page(pages[0]["id"], _properties)
-            
-            
-        return {
-            "page": upserted_page,
-            "was_created": was_created
-        }
+            )
+        elif not pages:
+            page = self.create_page(ds_id, {**_properties, **(create_only_props or {})})
+            return {"page": page, "was_created": True}
+        else:
+            if stored_hash is not None and stored_hash == new_hash:
+                return None  # page exists and unchanged
+            page = self.update_page(pages[0]["id"], _properties)
+            return {"page": page, "was_created": False}
             
         
             

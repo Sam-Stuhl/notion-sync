@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="notion-sync">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Notion Sync{% endblock %}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- DaisyUI + Tailwind -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <!-- Lucide icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- App styles (custom theme + typography) -->
+    <link href="/static/app.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-base-100 font-sans antialiased">
+
+    <nav class="border-b border-base-300 bg-base-100">
+        <div class="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between">
+            <a href="/" class="text-sm font-semibold tracking-tight text-base-content hover:text-primary transition-colors">
+                notion-sync
+            </a>
+            <div class="flex items-center gap-4">
+                {% if user is defined and user %}
+                    {% if user.avatar_url %}
+                        <img src="{{ user.avatar_url }}" class="w-7 h-7 rounded-full" alt="">
+                    {% endif %}
+                    <span class="text-sm text-base-content/40 hidden sm:inline">
+                        {{ user.display_name or user.email }}
+                    </span>
+                    <a href="/auth/logout" class="text-sm text-base-content/40 hover:text-base-content/70 transition-colors">
+                        Sign out
+                    </a>
+                {% else %}
+                    <a href="/auth/login" class="btn btn-primary btn-sm">Connect Notion</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="mx-auto max-w-4xl px-4 py-10">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Integration modal (shared across dashboard actions) -->
+    <dialog id="integration-modal" class="modal">
+        <div class="modal-box bg-base-200 border border-base-300 max-w-md p-6">
+            <div id="integration-modal-content"></div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <script>
+        lucide.createIcons();
+
+        // Re-init icons and open modal when modal content is swapped in
+        document.addEventListener('htmx:afterSwap', (e) => {
+            lucide.createIcons();
+            if (e.detail.target && e.detail.target.id === 'integration-modal-content') {
+                document.getElementById('integration-modal').showModal();
+            }
+        });
+
+        // Close modal on HX-Trigger: close-modal
+        document.addEventListener('close-modal', () => {
+            document.getElementById('integration-modal').close();
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Notion Sync — Keep Canvas in sync with Notion{% endblock %}
+
+{% block content %}
+<div class="hero min-h-[65vh]">
+    <div class="hero-content text-center">
+        <div class="max-w-lg">
+            <h1 class="text-5xl font-bold tracking-tight">Canvas → Notion</h1>
+            <p class="py-6 text-lg text-base-content/60 leading-relaxed">
+                Automatically sync your courses, assignments, and deadlines from Canvas
+                into your Notion workspace. Stay organized without the manual work.
+            </p>
+            <div class="flex flex-col items-center gap-3">
+                <a href="/auth/login" class="btn btn-primary btn-lg">
+                    Get started with Notion
+                </a>
+                <a href="/auth/login" class="text-sm text-base-content/40 hover:text-base-content/60 transition-colors">
+                    Already have an account? Log in →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+/* ─── Custom DaisyUI Theme ───────────────────────────────────────── */
+
+[data-theme="notion-sync"] {
+  color-scheme: dark;
+
+  --color-primary:           oklch(59.28% 0.2337 277.72);
+  --color-primary-content:   oklch(100%   0      0);
+  --color-secondary:         oklch(70.14% 0.1912 293.55);
+  --color-secondary-content: oklch(100%   0      0);
+  --color-accent:            oklch(83.41% 0.1291 221.57);
+  --color-accent-content:    oklch(10%    0.01   221.57);
+  --color-neutral:           oklch(18.43% 0.0059 264.44);
+  --color-neutral-content:   oklch(90.89% 0.003  264.44);
+  --color-base-100:          oklch(7.56%  0.003  264.44);
+  --color-base-200:          oklch(11.43% 0.005  264.44);
+  --color-base-300:          oklch(15.22% 0.006  264.44);
+  --color-base-content:      oklch(90.89% 0.003  264.44);
+  --color-info:              oklch(59.56% 0.1892 252.47);
+  --color-info-content:      oklch(100%   0      0);
+  --color-success:           oklch(69.28% 0.1807 162.82);
+  --color-success-content:   oklch(100%   0      0);
+  --color-warning:           oklch(75.52% 0.1621 75.29);
+  --color-warning-content:   oklch(20%    0.04   75.29);
+  --color-error:             oklch(62.78% 0.219  25.33);
+  --color-error-content:     oklch(100%   0      0);
+
+  --radius-selector: 0.5rem;
+  --radius-field:    0.375rem;
+  --radius-box:      0.5rem;
+  --size-selector:   0.25rem;
+  --size-field:      0.25rem;
+  --border:          1px;
+  --depth:           0;
+  --noise:           0;
+}
+
+/* ─── Typography ─────────────────────────────────────────────────── */
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+/* ─── Global refinements ─────────────────────────────────────────── */
+
+/* Remove shadows from cards in dark mode — use bg contrast instead */
+.card {
+  box-shadow: none;
+}
+
+/* Tighter navbar */
+.navbar {
+  min-height: 3.5rem;
+}

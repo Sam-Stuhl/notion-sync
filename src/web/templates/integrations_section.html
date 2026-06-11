@@ -1,0 +1,39 @@
+<div id="integrations-section" class="card bg-base-200 border border-base-300">
+    <div class="card-body p-6">
+
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wider">Integrations</h2>
+            <button class="btn btn-ghost btn-xs gap-1 text-base-content/60 hover:text-base-content"
+                    hx-get="/integrations/new"
+                    hx-target="#integration-modal-content"
+                    hx-swap="innerHTML">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                Add
+            </button>
+        </div>
+
+        {% if integrations %}
+            <div class="mt-4 flex flex-col divide-y divide-base-300">
+                {% for integration in integrations %}
+                    {% include "integrations/card.html" %}
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <div class="flex flex-col items-center py-10 text-center">
+                <i data-lucide="plug-zap" class="w-8 h-8 text-base-content/20 mb-4"></i>
+                <p class="text-sm font-medium text-base-content/50">No integrations yet</p>
+                <p class="text-xs text-base-content/30 mt-1 mb-5">
+                    Connect an external service to start syncing data into Notion
+                </p>
+                <button class="btn btn-primary btn-sm"
+                        hx-get="/integrations/new"
+                        hx-target="#integration-modal-content"
+                        hx-swap="innerHTML">
+                    Add Integration
+                </button>
+            </div>
+        {% endif %}
+
+    </div>
+</div>

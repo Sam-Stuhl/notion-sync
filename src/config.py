@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     database_url: str
     encryption_key: str
 
+    notion_oauth_client_id: str
+    notion_oauth_client_secret: str
+    jwt_secret: str
+    
+    app_base_url: str
+
     log_level: str = "INFO"
 
 settings = Settings()  # raises on startup if anything's missing

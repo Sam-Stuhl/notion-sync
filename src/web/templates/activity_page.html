@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Sync History — Notion Sync{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <div class="flex items-center gap-3">
+        <a href="/dashboard" class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-base-content">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </a>
+        <h1 class="text-xl font-semibold tracking-tight">Sync History</h1>
+        <a href="/logs" class="btn btn-ghost btn-xs gap-1.5 text-base-content/40 ml-auto">
+            <i data-lucide="scroll-text" class="w-3.5 h-3.5"></i>
+            View logs
+        </a>
+    </div>
+
+    <div class="card bg-base-200 border border-base-300">
+        <div class="card-body p-6">
+
+            {% if recent_runs %}
+                <div class="flex flex-col divide-y divide-base-300">
+                {% for run in recent_runs %}
+
+                {% set has_detail = run.summary and (run.summary.get('courses') or run.summary.get('assignments')) %}
+
+                {% if has_detail %}
+                <details class="group py-3 first:pt-0 last:pb-0">
+                    <summary class="list-none cursor-pointer select-none">
+                {% else %}
+                <div class="py-3 first:pt-0 last:pb-0">
+                {% endif %}
+
+                    <div class="flex items-start gap-3">
+                        {% if run.status == 'success' %}
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-success flex-shrink-0 mt-0.5"></i>
+                        {% elif run.status == 'failed' %}
+                            <i data-lucide="x-circle" class="w-4 h-4 text-error flex-shrink-0 mt-0.5"></i>
+                        {% elif run.status == 'pending' %}
+                            <i data-lucide="loader-2" class="w-4 h-4 text-base-content/30 flex-shrink-0 mt-0.5 animate-spin"></i>
+                        {% else %}
+                            <i data-lucide="minus-circle" class="w-4 h-4 text-base-content/20 flex-shrink-0 mt-0.5"></i>
+                        {% endif %}
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-baseline justify-between gap-3">
+                                <p class="text-sm {% if run.status == 'failed' %}text-error/80{% else %}text-base-content/80{% endif %}">
+                                    {{ run | format_description }}
+                                </p>
+                                <span class="text-xs text-base-content/25 flex-shrink-0 tabular-nums">
+                                    {{ run.started_at | relative_time }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3 mt-0.5">
+                                {% if run.triggered_by %}
+                                <span class="text-xs text-base-content/25">via {{ run.triggered_by }}</span>
+                                {% endif %}
+                                {% if run.duration_ms %}
+                                <span class="text-xs text-base-content/20">{{ run.duration_ms }}ms</span>
+                                {% endif %}
+                            </div>
+                            {% if run.status == 'failed' and run.error_message %}
+                            <details class="mt-1.5 group/err">
+                                <summary class="text-xs text-error/50 cursor-pointer hover:text-error/70 transition-colors list-none flex items-center gap-1 select-none">
+                                    <i data-lucide="chevron-right" class="w-3 h-3 transition-transform group-open/err:rotate-90"></i>
+                                    Error details
+                                </summary>
+                                <p class="mt-1.5 text-xs text-base-content/40 font-mono bg-base-300 rounded px-2.5 py-1.5 break-all">
+                                    {{ run.error_message }}
+                                </p>
+                            </details>
+                            {% endif %}
+                        </div>
+
+                        {% if has_detail %}
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-base-content/20 flex-shrink-0 mt-0.5 transition-transform group-open:rotate-90"></i>
+                        {% endif %}
+                    </div>
+
+                {% if has_detail %}
+                    </summary>
+
+                    <div class="ml-7 mt-4 space-y-4 pb-1">
+
+                        {% if run.summary.get('assignments') %}
+                        <div>
+                            <p class="text-xs font-semibold text-base-content/35 uppercase tracking-wider mb-2">
+                                Assignments
+                            </p>
+                            <div class="space-y-1.5">
+                                {% for item in run.summary.assignments %}
+                                <div class="flex items-baseline gap-2 text-xs">
+                                    {% if item.action == 'created' %}
+                                        <span class="text-success font-mono w-3 text-center flex-shrink-0">+</span>
+                                    {% else %}
+                                        <span class="text-base-content/25 font-mono w-3 text-center flex-shrink-0">·</span>
+                                    {% endif %}
+                                    <span class="text-base-content/70">{{ item.title }}</span>
+                                    {% if item.get('reason') %}
+                                    <span class="text-primary/50 flex-shrink-0">{{ item.reason }}</span>
+                                    {% endif %}
+                                    {% if item.get('course') %}
+                                    <span class="text-base-content/25 truncate">{{ item.course }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if run.summary.get('courses') %}
+                        <div>
+                            <p class="text-xs font-semibold text-base-content/35 uppercase tracking-wider mb-2">
+                                Courses
+                            </p>
+                            <div class="space-y-1.5">
+                                {% for item in run.summary.courses %}
+                                <div class="flex items-baseline gap-2 text-xs">
+                                    {% if item.action == 'created' %}
+                                        <span class="text-success font-mono w-3 text-center flex-shrink-0">+</span>
+                                    {% else %}
+                                        <span class="text-base-content/25 font-mono w-3 text-center flex-shrink-0">·</span>
+                                    {% endif %}
+                                    <span class="text-base-content/70">{{ item.title }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+
+                </details>
+                {% else %}
+                </div>
+                {% endif %}
+
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="flex flex-col items-center py-12 text-center">
+                    <i data-lucide="activity" class="w-8 h-8 text-base-content/15 mb-3"></i>
+                    <p class="text-sm text-base-content/35">No sync history yet</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

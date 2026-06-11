@@ -1,0 +1,30 @@
+{% set service = services_by_id.get(integration.service) %}
+<div class="flex items-start justify-between mb-4">
+    <h3 class="text-base font-semibold">Delete integration?</h3>
+    <button class="btn btn-ghost btn-sm btn-square -mt-1 -mr-2"
+            onclick="document.getElementById('integration-modal').close()">
+        <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+</div>
+
+<p class="text-sm text-base-content/50 leading-relaxed mb-6">
+    This will remove the
+    {% if service %}<strong class="text-base-content/70">{{ service.name }}</strong>{% endif %}
+    connection to
+    <strong class="text-base-content/70">{{ integration.display_name or integration.base_url }}</strong>.
+    Your synced data in Notion will remain, but no new syncs will run until you reconnect.
+</p>
+
+<div class="flex justify-end gap-2">
+    <button class="btn btn-ghost btn-sm"
+            onclick="document.getElementById('integration-modal').close()">
+        Cancel
+    </button>
+    <button class="btn btn-error btn-sm"
+            hx-delete="/integrations/{{ integration.id }}"
+            hx-target="#integrations-section"
+            hx-swap="outerHTML">
+        <span class="loading loading-spinner loading-xs htmx-indicator"></span>
+        Delete
+    </button>
+</div>

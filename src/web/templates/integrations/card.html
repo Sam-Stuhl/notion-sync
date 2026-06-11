@@ -1,0 +1,61 @@
+{% set service = services_by_id.get(integration.service) %}
+<div class="flex items-center gap-3 py-4 first:pt-0 last:pb-0">
+
+    {% if integration.last_validation_error %}
+        <span class="w-2 h-2 rounded-full bg-error flex-shrink-0"></span>
+    {% elif integration.last_validated_at %}
+        <span class="w-2 h-2 rounded-full bg-success flex-shrink-0"></span>
+    {% else %}
+        <span class="w-2 h-2 rounded-full bg-warning flex-shrink-0"></span>
+    {% endif %}
+
+    {% if service %}
+        <i data-lucide="{{ service.icon }}" class="w-4 h-4 text-base-content/30 flex-shrink-0"></i>
+    {% endif %}
+
+    <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium truncate">
+            {{ integration.display_name or integration.base_url }}
+        </p>
+        <p class="text-xs text-base-content/40 truncate mt-0.5">
+            {% if service %}{{ service.name }}{% if integration.base_url %} · {{ integration.base_url }}{% endif %}
+            {% else %}{{ integration.base_url }}{% endif %}
+        </p>
+        <p class="text-xs mt-1 {% if integration.last_validation_error %}text-error/70{% else %}text-base-content/30{% endif %}">
+            {% if integration.last_validation_error %}
+                {{ integration.last_validation_error }}
+            {% elif integration.last_validated_at %}
+                Verified {{ integration.last_validated_at | relative_time }}
+            {% else %}
+                Not yet verified
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="dropdown dropdown-end flex-shrink-0">
+        <button tabindex="0" class="btn btn-ghost btn-xs btn-square text-base-content/30 hover:text-base-content">
+            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+        </button>
+        <ul tabindex="0" class="dropdown-content menu bg-base-300 rounded-lg z-10 w-32 p-1 text-sm shadow-lg">
+            <li>
+                <button class="rounded-md"
+                        hx-get="/integrations/{{ integration.id }}/edit-form"
+                        hx-target="#integration-modal-content"
+                        hx-swap="innerHTML">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    Edit
+                </button>
+            </li>
+            <li>
+                <button class="rounded-md text-error hover:bg-error/10"
+                        hx-get="/integrations/{{ integration.id }}/delete-confirm"
+                        hx-target="#integration-modal-content"
+                        hx-swap="innerHTML">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    Delete
+                </button>
+            </li>
+        </ul>
+    </div>
+
+</div>

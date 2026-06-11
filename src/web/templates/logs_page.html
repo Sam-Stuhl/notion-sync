@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Logs — Notion Sync{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+    <div class="flex items-center gap-3">
+        <a href="/dashboard" class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-base-content">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </a>
+        <h1 class="text-xl font-semibold tracking-tight">Logs</h1>
+        <span class="text-sm text-base-content/40 ml-auto">Last {{ log_lines | length }} lines</span>
+        <a href="/logs?lines=500" class="btn btn-ghost btn-xs text-base-content/40">More</a>
+    </div>
+
+    <div class="card bg-base-200 border border-base-300">
+        <div class="card-body p-0">
+            {% if log_lines %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs font-mono">
+                    {% for line in log_lines | reverse %}
+                    {% set stripped = line.strip() %}
+                    {% if stripped %}
+                    <tr class="border-b border-base-300/50 last:border-0 hover:bg-base-300/30 transition-colors
+                        {% if 'ERROR' in stripped %}text-error/80
+                        {% elif 'WARNING' in stripped %}text-warning/80
+                        {% elif 'DEBUG' in stripped %}text-base-content/30
+                        {% else %}text-base-content/60{% endif %}">
+                        <td class="px-4 py-1.5 whitespace-pre">{{ stripped }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
+            {% else %}
+                <div class="flex flex-col items-center py-12 text-center">
+                    <i data-lucide="file-text" class="w-8 h-8 text-base-content/15 mb-3"></i>
+                    <p class="text-sm text-base-content/35">No logs yet</p>
+                    <p class="text-xs text-base-content/20 mt-1">Logs appear here after a sync runs</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

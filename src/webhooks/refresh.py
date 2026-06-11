@@ -1,14 +1,14 @@
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
 
 from src.config import settings
-from src.handlers.common import WebhookPayload, build_context
-from src.operations.courses import sync_courses
+from src.webhooks.common import WebhookPayload, build_context, record_sync_run, source_label
+from src.operations.courses import sync_courses_and_assignments
 from src.operations.semesters import get_current_semester, reconcile_semester_status, update_view_filters
 
 router = APIRouter()
 
 
-async def _run_refresh(workspace_id: str) -> None:
+async def _do_refresh(workspace_id: str) -> dict:
     context = await build_context(workspace_id)
 
     current_semester_id = get_current_semester(context)
@@ -16,7 +16,12 @@ async def _run_refresh(workspace_id: str) -> None:
         reconcile_semester_status(context, current_semester_id)
         update_view_filters(context, current_semester_id)
 
-    sync_courses(context, current_semester_id)
+    return sync_courses_and_assignments(context, current_semester_id)
+
+
+async def _run_refresh(workspace_id: str, triggered_by: str = "notion") -> None:
+    async with record_sync_run(workspace_id, "refresh", triggered_by) as collector:
+        collector["summary"] = await _do_refresh(workspace_id)
 
 
 @router.post("/refresh")
@@ -28,5 +33,5 @@ async def refresh(
     if authorization != f"Bearer {settings.webhook_secret}":
         raise HTTPException(status_code=401)
 
-    background_tasks.add_task(_run_refresh, payload.data.id)
+    background_tasks.add_task(_run_refresh, payload.data.id, source_label(payload.source.type))
     return {"status": "queued"}

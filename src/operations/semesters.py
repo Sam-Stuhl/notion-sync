@@ -64,6 +64,6 @@ def update_view_filters(context: SyncContext, semester_page_id: str) -> None:
     """Updates the semester relational filter for the main views on the dashboard"""
 
     for view in VIEWS:
-        semester_condition = {"property": view["semester_prop_id"], "relation": {"contains": semester_page_id}}
-        combined_filter = {"and": [*view["base_conditions"], semester_condition]}
-        context.notion.update_view(view["view_id"], combined_filter)
+        semester_condition = {"property": view.semester_prop_id, "relation": {"contains": semester_page_id}}
+        combined_filter = {"and": [*view.base_conditions, semester_condition]}
+        context.notion.update_view(view.view_id, combined_filter)
