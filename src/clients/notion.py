@@ -9,6 +9,12 @@ class NotionClient:
     def __init__(self, token: Optional[str] = None):
         if token is None:
             token = settings.notion_access_token
+        if not token:
+            raise RuntimeError(
+                "NotionClient needs a token: pass it explicitly, or set "
+                "NOTION_ACCESS_TOKEN in .env. In production the token comes "
+                "per-tenant from the database via build_context()."
+            )
         self._client = Client(auth=token)
         
     def query_data_source(self, ds_id: str, filter_dict: Optional[dict] = None, sorts_dict: Optional[dict] = None) -> list:

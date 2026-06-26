@@ -14,6 +14,12 @@ class CanvasClient(SISClient):
             url = settings.canvas_url
         if token is None:
             token = settings.canvas_access_token
+        if not url or not token:
+            raise RuntimeError(
+                "CanvasClient needs a url and token: pass them explicitly, or set "
+                "CANVAS_URL / CANVAS_ACCESS_TOKEN in .env. In production these come "
+                "per-tenant from the database via build_context()."
+            )
         self._client = Canvas(url, token)
         self.user = self._client.get_current_user()
         
