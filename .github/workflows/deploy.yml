@@ -8,7 +8,7 @@ jobs:
     runs-on: [self-hosted, Windows]
     steps:
       - name: Pull latest and restart
-        shell: pwsh
+        shell: powershell
         working-directory: C:\srv\notion-sync
         run: |
           git fetch origin
