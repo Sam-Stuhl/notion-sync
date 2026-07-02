@@ -1,12 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks, Header
+from fastapi import APIRouter, BackgroundTasks
 
 from src.clients import notion_props
 from src.webhooks.common import (
     WebhookPayload,
+    authorize_webhook,
     build_context,
     record_sync_run,
     source_label,
-    verify_webhook_secret,
 )
 from src.operations.assignments import sync_assignments_for_course
 
@@ -101,9 +101,9 @@ async def _run_sync_assignments_for_course(
 async def handle_sync_assignments(
     payload: WebhookPayload,
     background_tasks: BackgroundTasks,
-    authorization: str = Header(),
 ):
-    verify_webhook_secret(authorization)
+    if await authorize_webhook(payload.data.id, "sync_assignments") == "skipped":
+        return {"status": "skipped"}
 
     background_tasks.add_task(_run_sync_assignments, payload.data.id, source_label(payload.source.type))
     return {"status": "queued"}
@@ -113,9 +113,10 @@ async def handle_sync_assignments(
 async def handle_sync_assignments_for_course(
     payload: WebhookPayload,
     background_tasks: BackgroundTasks,
-    authorization: str = Header(),
 ):
-    verify_webhook_secret(authorization)
+    # Per-course automation: fires once per changed assignment, so legitimate
+    # bursts are expected — authorize by ownership but don't rate-limit.
+    await authorize_webhook(payload.data.id, "sync_assignments", rate_limit=False)
 
     course_id = notion_props.read_rich_text(payload.data.properties, "External ID")
     background_tasks.add_task(

@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     notion_oauth_client_id: str
     notion_oauth_client_secret: str
     jwt_secret: str
-    webhook_secret: str
     database_url: str
     encryption_key: str
     app_base_url: str
@@ -18,6 +17,11 @@ class Settings(BaseSettings):
     # from the database (see src/webhooks/common.py:build_context). These globals
     # are only read as fallbacks by the client constructors and by scripts/ and
     # __main__ dev blocks, so the deployed service does not need them set.
+    # Unused: webhooks now authenticate by page ownership + rate limiting
+    # (see src/webhooks/common.py:authorize_webhook). Kept optional so an old
+    # WEBHOOK_SECRET in .env doesn't fail startup.
+    webhook_secret: str | None = None
+
     canvas_url: str | None = None
     canvas_access_token: str | None = None
     notion_access_token: str | None = None

@@ -1,12 +1,10 @@
-import hmac
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
-from src.config import settings
 from src.clients.canvas import CanvasClient  # noqa: F401 — registers "canvas" in SIS registry
 from src.clients.notion import NotionClient
 from src.clients.sis_client import build
@@ -55,11 +53,35 @@ def source_label(source_type: str) -> str:
     return _SOURCE_LABELS.get(source_type, source_type)
 
 
-def verify_webhook_secret(authorization: str) -> None:
-    """Constant-time check of the shared webhook bearer. Raises 401 on mismatch."""
-    expected = f"Bearer {settings.webhook_secret}"
-    if not authorization or not hmac.compare_digest(authorization, expected):
-        raise HTTPException(status_code=401)
+# A webhook is authorized purely by proving it targets a real tenant: the page
+# id in the payload must resolve to a user. There is no shared secret (buttons
+# can't carry a per-user one). Rate limiting bounds abuse of that open trigger.
+_RATE_LIMIT_WINDOW = timedelta(seconds=10)
+
+
+async def authorize_webhook(page_id: str, operation: str, *, rate_limit: bool = True) -> str:
+    """Authorize a webhook by page ownership.
+
+    Returns "ok" to proceed, or "skipped" if an identical sync for this tenant
+    ran within the rate-limit window. Raises 404 if the page maps to no user
+    (so we don't reveal whether a given page id is registered).
+    """
+    async with AsyncSessionLocal() as session:
+        user = await find_user_by_root_page_id(session, page_id)
+        if not user:
+            raise HTTPException(status_code=404)
+        if rate_limit:
+            cutoff = datetime.now(timezone.utc) - _RATE_LIMIT_WINDOW
+            recent = await session.execute(
+                select(SyncRun.id)
+                .where(SyncRun.user_id == user.id)
+                .where(SyncRun.operation == operation)
+                .where(SyncRun.started_at >= cutoff)
+                .limit(1)
+            )
+            if recent.first():
+                return "skipped"
+    return "ok"
 
 
 @asynccontextmanager

@@ -1,12 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks, Header
+from fastapi import APIRouter, BackgroundTasks
 
 from src.clients import notion_props
 from src.webhooks.common import (
     WebhookPayload,
+    authorize_webhook,
     build_context,
     record_sync_run,
     source_label,
-    verify_webhook_secret,
 )
 from src.operations.courses import sync_courses, _read_title
 
@@ -32,9 +32,9 @@ async def _run_sync_courses(workspace_id: str, triggered_by: str = "notion") -> 
 async def handle_sync_courses(
     payload: WebhookPayload,
     background_tasks: BackgroundTasks,
-    authorization: str = Header(),
 ):
-    verify_webhook_secret(authorization)
+    if await authorize_webhook(payload.data.id, "sync_courses") == "skipped":
+        return {"status": "skipped"}
 
     background_tasks.add_task(_run_sync_courses, payload.data.id, source_label(payload.source.type))
     return {"status": "queued"}
