@@ -4,43 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ widget.name or widget.type }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 100%; height: 100%; }
   body {
     display: flex; align-items: center; justify-content: center;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    text-align: center; overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    text-align: center; overflow: hidden; -webkit-font-smoothing: antialiased;
   }
   #widget { width: 100%; height: 100%; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 10px; padding: 20px; }
-  #title { font-size: 15px; font-weight: 600; opacity: 0.85; letter-spacing: 0.01em; }
-  #main { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .units { display: flex; gap: 16px; }
-  .unit { display: flex; flex-direction: column; }
-  .unit .n { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
-  .unit .l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+            align-items: center; justify-content: center; gap: clamp(8px, 3vh, 20px); padding: 5%; }
+  #title { font-size: clamp(13px, 4.5vw, 20px); font-weight: 600; opacity: 0.9;
+           letter-spacing: 0.01em; }
+
+  /* countdown */
+  .units { display: flex; gap: clamp(10px, 4vw, 30px); align-items: flex-start; }
+  .unit { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: clamp(42px, 14vw, 78px); }
+  .unit .n { font-size: clamp(30px, 13vw, 68px); font-weight: 800; font-variant-numeric: tabular-nums;
+             line-height: 0.95; letter-spacing: -0.02em; }
+  .unit .l { font-size: clamp(9px, 2.4vw, 12px); text-transform: uppercase; letter-spacing: 0.14em;
+             font-weight: 600; opacity: 0.55; }
+
+  /* clock */
+  #time { font-size: clamp(34px, 17vw, 82px); font-weight: 700; font-variant-numeric: tabular-nums;
+          line-height: 1; letter-spacing: -0.02em; }
+  #date { font-size: clamp(11px, 3.4vw, 16px); font-weight: 500; opacity: 0.6; letter-spacing: 0.02em; }
+
+  /* done state */
+  #done { font-size: clamp(24px, 8vw, 48px); font-weight: 700; letter-spacing: -0.01em; }
 
   /* edit affordances */
-  #gear { position: fixed; top: 8px; right: 8px; width: 26px; height: 26px; border: none;
-          border-radius: 6px; background: rgba(0,0,0,0.18); color: #fff; cursor: pointer;
-          font-size: 14px; line-height: 26px; opacity: 0; transition: opacity 0.15s; }
-  body:hover #gear { opacity: 0.7; }
+  #gear { position: fixed; top: 10px; right: 10px; width: 30px; height: 30px; border: none;
+          border-radius: 8px; background: rgba(0,0,0,0.16); color: #fff; cursor: pointer;
+          font-size: 15px; line-height: 30px; opacity: 0; transition: opacity 0.15s; backdrop-filter: blur(4px); }
+  body:hover #gear { opacity: 0.65; }
   #gear:hover { opacity: 1; }
   #panel { position: fixed; inset: 0; background: rgba(15,23,42,0.72); display: none;
            align-items: center; justify-content: center; padding: 16px; }
   #panel.open { display: flex; }
-  #card { background: #fff; color: #1e293b; border-radius: 12px; padding: 18px; width: 100%;
-          max-width: 320px; text-align: left; max-height: 100%; overflow: auto; }
-  #card h3 { font-size: 14px; margin-bottom: 12px; }
-  #card label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin: 10px 0 3px; }
+  #card { background: #fff; color: #1e293b; border-radius: 14px; padding: 20px; width: 100%;
+          max-width: 320px; text-align: left; max-height: 100%; overflow: auto;
+          font-family: 'Inter', sans-serif; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  #card h3 { font-size: 14px; margin-bottom: 6px; }
+  #card label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin: 12px 0 4px; }
   #card input[type=text], #card input[type=datetime-local] {
-    width: 100%; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 13px; }
-  #card .colors { display: flex; gap: 14px; }
-  #card input[type=color] { width: 46px; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; }
-  #card .chk { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
-  #card .row { display: flex; gap: 8px; margin-top: 16px; }
-  #card button { flex: 1; padding: 8px; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; }
+  #card .colors { display: flex; gap: 16px; }
+  #card input[type=color] { width: 48px; height: 34px; border: 1px solid #cbd5e1; border-radius: 7px; padding: 2px; }
+  #card .chk { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; }
+  #card .row { display: flex; gap: 8px; margin-top: 18px; }
+  #card button { flex: 1; padding: 9px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
   #save { background: #6366f1; color: #fff; }
   #cancel { background: #e2e8f0; color: #334155; }
 </style>
@@ -57,7 +73,7 @@
   <script>
     var cfg = JSON.parse(document.getElementById('cfg').textContent);
     var TYPE = {{ widget.type | tojson }};
-    var WID = {{ widget.id | tojson }};
+    var WID = "{{ widget.id }}";
     var TOKEN_KEY = 'notion-sync-widget-token:' + WID;
 
     var titleEl = document.getElementById('title');
@@ -77,29 +93,31 @@
       clearInterval(timer);
       applyStyle();
       if (TYPE === 'clock') {
-        bodyEl.innerHTML = '<div id="main"></div>';
-        var main = document.getElementById('main');
+        bodyEl.innerHTML = '<div id="time"></div><div id="date"></div>';
+        var timeEl = document.getElementById('time'), dateEl = document.getElementById('date');
         var tick = function () {
-          var opts = { hour12: !!cfg.hour12, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-          if (cfg.tz) opts.timeZone = cfg.tz;
-          try { main.textContent = new Date().toLocaleTimeString([], opts); }
-          catch (e) { main.textContent = new Date().toLocaleTimeString(); }
+          var t = { hour12: !!cfg.hour12, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+          var d = { weekday: 'long', month: 'long', day: 'numeric' };
+          if (cfg.tz) { t.timeZone = cfg.tz; d.timeZone = cfg.tz; }
+          var now = new Date();
+          try { timeEl.textContent = now.toLocaleTimeString([], t); dateEl.textContent = now.toLocaleDateString([], d); }
+          catch (e) { timeEl.textContent = now.toLocaleTimeString(); dateEl.textContent = now.toLocaleDateString(); }
         };
         tick(); timer = setInterval(tick, 1000);
       } else {
         bodyEl.innerHTML =
           '<div class="units">' +
-          '<div class="unit"><span class="n" id="d">0</span><span class="l">days</span></div>' +
-          '<div class="unit"><span class="n" id="h">00</span><span class="l">hrs</span></div>' +
-          '<div class="unit"><span class="n" id="m">00</span><span class="l">min</span></div>' +
-          '<div class="unit"><span class="n" id="s">00</span><span class="l">sec</span></div>' +
+          '<div class="unit"><span class="n" id="d">0</span><span class="l">Days</span></div>' +
+          '<div class="unit"><span class="n" id="h">00</span><span class="l">Hours</span></div>' +
+          '<div class="unit"><span class="n" id="m">00</span><span class="l">Minutes</span></div>' +
+          '<div class="unit"><span class="n" id="s">00</span><span class="l">Seconds</span></div>' +
           '</div>';
         var dEl = document.getElementById('d'), hEl = document.getElementById('h'),
             mEl = document.getElementById('m'), sEl = document.getElementById('s');
         var target = cfg.target ? new Date(cfg.target).getTime() : Date.now();
         var count = function () {
           var diff = Math.max(0, target - Date.now());
-          if (diff === 0 && cfg.done_text) { clearInterval(timer); bodyEl.innerHTML = '<div id="main">' + cfg.done_text + '</div>'; return; }
+          if (diff === 0 && cfg.done_text) { clearInterval(timer); bodyEl.innerHTML = '<div id="done">' + cfg.done_text + '</div>'; return; }
           var t = Math.floor(diff / 1000);
           dEl.textContent = Math.floor(t / 86400);
           hEl.textContent = pad(Math.floor((t % 86400) / 3600));
@@ -113,17 +131,18 @@
     // ─── Editing ──────────────────────────────────────────────────────────────
     var panel = document.getElementById('panel'), card = document.getElementById('card');
 
+    function esc(s) { return (s || '').replace(/"/g, '&quot;'); }
     function field(label, html) { return '<label>' + label + '</label>' + html; }
 
     function openEditor() {
       var bg = (cfg.bg && cfg.bg.charAt(0) === '#') ? cfg.bg : '#6366f1';
       var h = '<h3>Edit widget</h3>';
-      h += field('Title', '<input type="text" id="f_title" value="' + (cfg.title || '').replace(/"/g, '&quot;') + '">');
+      h += field('Title', '<input type="text" id="f_title" value="' + esc(cfg.title) + '">');
       if (TYPE === 'countdown') {
         h += field('Count down to', '<input type="datetime-local" id="f_target" value="' + (cfg.target || '') + '">');
-        h += field('Message at zero', '<input type="text" id="f_done" value="' + (cfg.done_text || '').replace(/"/g, '&quot;') + '">');
+        h += field('Message at zero', '<input type="text" id="f_done" value="' + esc(cfg.done_text) + '">');
       } else {
-        h += field('Timezone (blank = local)', '<input type="text" id="f_tz" value="' + (cfg.tz || '').replace(/"/g, '&quot;') + '" placeholder="America/New_York">');
+        h += field('Timezone (blank = local)', '<input type="text" id="f_tz" value="' + esc(cfg.tz) + '" placeholder="America/New_York">');
         h += '<div class="chk"><input type="checkbox" id="f_h12"' + (cfg.hour12 ? ' checked' : '') + '><span>12-hour (AM/PM)</span></div>';
       }
       h += '<div class="colors"><div><label>Background</label><input type="color" id="f_bg" value="' + bg + '"></div>' +
