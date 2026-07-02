@@ -10,8 +10,14 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from urllib.parse import urlsplit
+
 from src.auth.middleware import require_user
-from src.auth.sessions import verify_session_token
+from src.auth.sessions import (
+    create_widget_edit_token,
+    verify_session_token,
+    verify_widget_edit_token,
+)
 from src.config import settings
 from src.db.models import SyncRun, User
 from src.db.repositories import (
@@ -331,6 +337,26 @@ def _embed_url(widget_id: uuid.UUID) -> str:
     return f"{settings.app_base_url.rstrip('/')}/w/{widget_id}"
 
 
+def _app_origin() -> str:
+    parts = urlsplit(settings.app_base_url)
+    return f"{parts.scheme}://{parts.netloc}"
+
+
+def _build_widget_config(widget_type: str, src, base: dict | None = None) -> dict:
+    """Build a stored config from a form/JSON source (both expose .get)."""
+    cfg = dict(base or {})
+    cfg["title"] = (src.get("title") or "").strip()
+    cfg["bg"] = src.get("bg") or "#6366f1"
+    cfg["color"] = src.get("color") or "#ffffff"
+    if widget_type == "countdown":
+        cfg["target"] = src.get("target") or ""
+        cfg["done_text"] = (src.get("done_text") or "").strip()
+    elif widget_type == "clock":
+        cfg["tz"] = (src.get("tz") or "").strip()
+        cfg["hour12"] = src.get("hour12") in (True, "on", "true", "1")
+    return cfg
+
+
 @router.get("/widgets")
 async def widgets_page(
     request: Request,
@@ -389,16 +415,7 @@ async def widget_update(
     if not widget:
         raise HTTPException(404)
     form = await request.form()
-    cfg = dict(widget.config or {})
-    cfg["title"] = (form.get("title") or "").strip()
-    cfg["bg"] = form.get("bg") or "#6366f1"
-    cfg["color"] = form.get("color") or "#ffffff"
-    if widget.type == "countdown":
-        cfg["target"] = form.get("target") or ""
-        cfg["done_text"] = (form.get("done_text") or "").strip()
-    elif widget.type == "clock":
-        cfg["tz"] = (form.get("tz") or "").strip()
-        cfg["hour12"] = form.get("hour12") == "on"
+    cfg = _build_widget_config(widget.type, form, base=widget.config)
     await update_widget(db, widget, cfg)
     await db.commit()
     return RedirectResponse(f"/widgets/{widget_id}/edit", status_code=303)
@@ -415,6 +432,48 @@ async def widget_delete(
         await soft_delete_widget(db, widget)
         await db.commit()
     return RedirectResponse("/widgets", status_code=303)
+
+
+@router.get("/w/{widget_id}/unlock")
+async def widget_unlock(
+    widget_id: uuid.UUID,
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_session),
+):
+    widget = await get_widget_for_user(db, widget_id, user.id)
+    if not widget:
+        raise HTTPException(404)
+    token = create_widget_edit_token(str(widget_id), str(user.id))
+    return templates.TemplateResponse(
+        request=request,
+        name="widget_unlock.html",
+        context={"token": token, "app_origin": _app_origin(), "widget_id": str(widget_id)},
+    )
+
+
+@router.post("/w/{widget_id}/config")
+async def widget_config_update(
+    widget_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_session),
+):
+    auth = request.headers.get("Authorization", "")
+    token = auth[7:] if auth.startswith("Bearer ") else ""
+    try:
+        wid, uid = verify_widget_edit_token(token)
+    except jwt.InvalidTokenError:
+        raise HTTPException(401, "Invalid or expired edit token")
+    if wid != str(widget_id):
+        raise HTTPException(403)
+    widget = await get_widget_for_user(db, widget_id, uuid.UUID(uid))
+    if not widget:
+        raise HTTPException(404)
+    body = await request.json()
+    cfg = _build_widget_config(widget.type, body, base=widget.config)
+    await update_widget(db, widget, cfg)
+    await db.commit()
+    return {"ok": True, "config": cfg}
 
 
 @router.get("/w/{widget_id}")

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unlock editing</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         display: flex; align-items: center; justify-content: center; height: 100vh;
+         margin: 0; color: #334155; text-align: center; padding: 24px; }
+</style>
+</head>
+<body>
+  <p id="msg">Unlocking…</p>
+  <script>
+    var TOKEN = {{ token | tojson }};
+    var ORIGIN = {{ app_origin | tojson }};
+    var WID = {{ widget_id | tojson }};
+    if (window.opener) {
+      window.opener.postMessage({ source: "notion-sync-widget", widgetId: WID, token: TOKEN }, ORIGIN);
+      document.getElementById("msg").textContent = "Editing unlocked — you can close this window.";
+      setTimeout(function () { window.close(); }, 700);
+    } else {
+      document.getElementById("msg").textContent = "Editing unlocked. Return to your Notion page and try again.";
+    }
+  </script>
+</body>
+</html>

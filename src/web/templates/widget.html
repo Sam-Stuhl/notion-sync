@@ -10,20 +10,39 @@
   body {
     display: flex; align-items: center; justify-content: center;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    text-align: center;
-    overflow: hidden;
+    text-align: center; overflow: hidden;
   }
-  #widget {
-    width: 100%; height: 100%;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px; padding: 20px;
-  }
+  #widget { width: 100%; height: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 10px; padding: 20px; }
   #title { font-size: 15px; font-weight: 600; opacity: 0.85; letter-spacing: 0.01em; }
   #main { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .units { display: flex; gap: 16px; }
   .unit { display: flex; flex-direction: column; }
   .unit .n { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
   .unit .l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+
+  /* edit affordances */
+  #gear { position: fixed; top: 8px; right: 8px; width: 26px; height: 26px; border: none;
+          border-radius: 6px; background: rgba(0,0,0,0.18); color: #fff; cursor: pointer;
+          font-size: 14px; line-height: 26px; opacity: 0; transition: opacity 0.15s; }
+  body:hover #gear { opacity: 0.7; }
+  #gear:hover { opacity: 1; }
+  #panel { position: fixed; inset: 0; background: rgba(15,23,42,0.72); display: none;
+           align-items: center; justify-content: center; padding: 16px; }
+  #panel.open { display: flex; }
+  #card { background: #fff; color: #1e293b; border-radius: 12px; padding: 18px; width: 100%;
+          max-width: 320px; text-align: left; max-height: 100%; overflow: auto; }
+  #card h3 { font-size: 14px; margin-bottom: 12px; }
+  #card label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin: 10px 0 3px; }
+  #card input[type=text], #card input[type=datetime-local] {
+    width: 100%; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 13px; }
+  #card .colors { display: flex; gap: 14px; }
+  #card input[type=color] { width: 46px; height: 32px; border: 1px solid #cbd5e1; border-radius: 6px; }
+  #card .chk { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
+  #card .row { display: flex; gap: 8px; margin-top: 16px; }
+  #card button { flex: 1; padding: 8px; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  #save { background: #6366f1; color: #fff; }
+  #cancel { background: #e2e8f0; color: #334155; }
 </style>
 </head>
 <body>
@@ -31,56 +50,141 @@
     <div id="title"></div>
     <div id="body"></div>
   </div>
+  <button id="gear" title="Edit">⚙</button>
+  <div id="panel"><div id="card"></div></div>
 
   <script id="cfg" type="application/json">{{ config_json | safe }}</script>
   <script>
     var cfg = JSON.parse(document.getElementById('cfg').textContent);
-    var type = {{ widget.type | tojson }};
-
-    document.body.style.background = cfg.bg || '#6366f1';
-    document.body.style.color = cfg.color || '#ffffff';
+    var TYPE = {{ widget.type | tojson }};
+    var WID = {{ widget.id | tojson }};
+    var TOKEN_KEY = 'notion-sync-widget-token:' + WID;
 
     var titleEl = document.getElementById('title');
     var bodyEl = document.getElementById('body');
-    titleEl.textContent = cfg.title || '';
-    if (!cfg.title) titleEl.style.display = 'none';
+    var timer = null;
 
     function pad(n) { return String(n).padStart(2, '0'); }
 
-    if (type === 'clock') {
-      bodyEl.innerHTML = '<div id="main"></div>';
-      var main = document.getElementById('main');
-      function tick() {
-        var opts = { hour12: !!cfg.hour12, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-        if (cfg.tz) opts.timeZone = cfg.tz;
-        main.textContent = new Date().toLocaleTimeString([], opts);
-      }
-      tick(); setInterval(tick, 1000);
-
-    } else { // countdown
-      bodyEl.innerHTML =
-        '<div class="units">' +
-        '<div class="unit"><span class="n" id="d">0</span><span class="l">days</span></div>' +
-        '<div class="unit"><span class="n" id="h">00</span><span class="l">hrs</span></div>' +
-        '<div class="unit"><span class="n" id="m">00</span><span class="l">min</span></div>' +
-        '<div class="unit"><span class="n" id="s">00</span><span class="l">sec</span></div>' +
-        '</div>';
-      var dEl = document.getElementById('d'), hEl = document.getElementById('h'),
-          mEl = document.getElementById('m'), sEl = document.getElementById('s');
-      var target = cfg.target ? new Date(cfg.target).getTime() : Date.now();
-      function count() {
-        var diff = Math.max(0, target - Date.now());
-        var t = Math.floor(diff / 1000);
-        dEl.textContent = Math.floor(t / 86400);
-        hEl.textContent = pad(Math.floor((t % 86400) / 3600));
-        mEl.textContent = pad(Math.floor((t % 3600) / 60));
-        sEl.textContent = pad(t % 60);
-        if (diff === 0 && cfg.done_text) {
-          bodyEl.innerHTML = '<div id="main">' + cfg.done_text + '</div>';
-        }
-      }
-      count(); setInterval(count, 1000);
+    function applyStyle() {
+      document.body.style.background = cfg.bg || '#6366f1';
+      document.body.style.color = cfg.color || '#ffffff';
+      titleEl.textContent = cfg.title || '';
+      titleEl.style.display = cfg.title ? '' : 'none';
     }
+
+    function build() {
+      clearInterval(timer);
+      applyStyle();
+      if (TYPE === 'clock') {
+        bodyEl.innerHTML = '<div id="main"></div>';
+        var main = document.getElementById('main');
+        var tick = function () {
+          var opts = { hour12: !!cfg.hour12, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+          if (cfg.tz) opts.timeZone = cfg.tz;
+          try { main.textContent = new Date().toLocaleTimeString([], opts); }
+          catch (e) { main.textContent = new Date().toLocaleTimeString(); }
+        };
+        tick(); timer = setInterval(tick, 1000);
+      } else {
+        bodyEl.innerHTML =
+          '<div class="units">' +
+          '<div class="unit"><span class="n" id="d">0</span><span class="l">days</span></div>' +
+          '<div class="unit"><span class="n" id="h">00</span><span class="l">hrs</span></div>' +
+          '<div class="unit"><span class="n" id="m">00</span><span class="l">min</span></div>' +
+          '<div class="unit"><span class="n" id="s">00</span><span class="l">sec</span></div>' +
+          '</div>';
+        var dEl = document.getElementById('d'), hEl = document.getElementById('h'),
+            mEl = document.getElementById('m'), sEl = document.getElementById('s');
+        var target = cfg.target ? new Date(cfg.target).getTime() : Date.now();
+        var count = function () {
+          var diff = Math.max(0, target - Date.now());
+          if (diff === 0 && cfg.done_text) { clearInterval(timer); bodyEl.innerHTML = '<div id="main">' + cfg.done_text + '</div>'; return; }
+          var t = Math.floor(diff / 1000);
+          dEl.textContent = Math.floor(t / 86400);
+          hEl.textContent = pad(Math.floor((t % 86400) / 3600));
+          mEl.textContent = pad(Math.floor((t % 3600) / 60));
+          sEl.textContent = pad(t % 60);
+        };
+        count(); timer = setInterval(count, 1000);
+      }
+    }
+
+    // ─── Editing ──────────────────────────────────────────────────────────────
+    var panel = document.getElementById('panel'), card = document.getElementById('card');
+
+    function field(label, html) { return '<label>' + label + '</label>' + html; }
+
+    function openEditor() {
+      var bg = (cfg.bg && cfg.bg.charAt(0) === '#') ? cfg.bg : '#6366f1';
+      var h = '<h3>Edit widget</h3>';
+      h += field('Title', '<input type="text" id="f_title" value="' + (cfg.title || '').replace(/"/g, '&quot;') + '">');
+      if (TYPE === 'countdown') {
+        h += field('Count down to', '<input type="datetime-local" id="f_target" value="' + (cfg.target || '') + '">');
+        h += field('Message at zero', '<input type="text" id="f_done" value="' + (cfg.done_text || '').replace(/"/g, '&quot;') + '">');
+      } else {
+        h += field('Timezone (blank = local)', '<input type="text" id="f_tz" value="' + (cfg.tz || '').replace(/"/g, '&quot;') + '" placeholder="America/New_York">');
+        h += '<div class="chk"><input type="checkbox" id="f_h12"' + (cfg.hour12 ? ' checked' : '') + '><span>12-hour (AM/PM)</span></div>';
+      }
+      h += '<div class="colors"><div><label>Background</label><input type="color" id="f_bg" value="' + bg + '"></div>' +
+           '<div><label>Text</label><input type="color" id="f_color" value="' + (cfg.color || '#ffffff') + '"></div></div>';
+      h += '<div class="row"><button id="cancel">Cancel</button><button id="save">Save</button></div>';
+      card.innerHTML = h;
+      document.getElementById('cancel').onclick = function () { panel.classList.remove('open'); };
+      document.getElementById('save').onclick = save;
+      panel.classList.add('open');
+    }
+
+    function save() {
+      var next = { title: document.getElementById('f_title').value,
+                   bg: document.getElementById('f_bg').value,
+                   color: document.getElementById('f_color').value };
+      if (TYPE === 'countdown') {
+        next.target = document.getElementById('f_target').value;
+        next.done_text = document.getElementById('f_done').value;
+      } else {
+        next.tz = document.getElementById('f_tz').value;
+        next.hour12 = document.getElementById('f_h12').checked;
+      }
+      var token = localStorage.getItem(TOKEN_KEY);
+      var btn = document.getElementById('save'); btn.textContent = 'Saving…'; btn.disabled = true;
+      fetch('/w/' + WID + '/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(next)
+      }).then(function (r) {
+        if (r.status === 401) { localStorage.removeItem(TOKEN_KEY); throw new Error('expired'); }
+        if (!r.ok) throw new Error('save failed');
+        return r.json();
+      }).then(function (data) {
+        cfg = data.config; build(); panel.classList.remove('open');
+      }).catch(function (e) {
+        btn.disabled = false; btn.textContent = 'Save';
+        if (e.message === 'expired') { alert('Editing session expired — please unlock again.'); panel.classList.remove('open'); }
+        else alert('Could not save. ' + e.message);
+      });
+    }
+
+    function unlock() {
+      var w = window.open('/w/' + WID + '/unlock', 'nsw_unlock', 'width=460,height=620');
+      if (!w) alert('Please allow pop-ups for this site to unlock editing.');
+    }
+
+    document.getElementById('gear').onclick = function () {
+      if (localStorage.getItem(TOKEN_KEY)) openEditor();
+      else unlock();
+    };
+
+    window.addEventListener('message', function (e) {
+      if (e.origin !== location.origin) return;
+      var d = e.data;
+      if (d && d.source === 'notion-sync-widget' && d.widgetId === WID && d.token) {
+        localStorage.setItem(TOKEN_KEY, d.token);
+        openEditor();
+      }
+    });
+
+    build();
   </script>
 </body>
 </html>
