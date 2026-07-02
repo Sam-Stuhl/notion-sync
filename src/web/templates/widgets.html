@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Widgets · Notion Sync{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-semibold tracking-tight">Widgets</h1>
+            <p class="text-sm text-base-content/50">Embed these in a Notion page via /embed.</p>
+        </div>
+        <div class="flex gap-2">
+            <form method="post" action="/widgets">
+                <input type="hidden" name="type" value="countdown">
+                <button class="btn btn-sm btn-primary">New countdown</button>
+            </form>
+            <form method="post" action="/widgets">
+                <input type="hidden" name="type" value="clock">
+                <button class="btn btn-sm btn-outline">New clock</button>
+            </form>
+        </div>
+    </div>
+
+    {% if not widgets %}
+        <div class="text-sm text-base-content/40 border border-dashed border-base-300 rounded-lg p-8 text-center">
+            No widgets yet. Create one above, then paste its embed URL into Notion.
+        </div>
+    {% else %}
+        <div class="space-y-3">
+            {% for widget, url in widgets %}
+            <div class="flex items-center gap-4 border border-base-300 rounded-lg p-4">
+                <div class="w-2 h-2 rounded-full bg-primary shrink-0"></div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium capitalize">{{ widget.name or widget.type }}</div>
+                    <div class="text-xs text-base-content/40 truncate font-mono">{{ url }}</div>
+                </div>
+                <a href="{{ url }}" target="_blank" class="btn btn-ghost btn-xs">Preview</a>
+                <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('{{ url }}')">Copy URL</button>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

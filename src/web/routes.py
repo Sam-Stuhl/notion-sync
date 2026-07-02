@@ -1,3 +1,4 @@
+import json
 import pathlib
 import uuid
 from datetime import datetime, timezone
@@ -11,15 +12,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.middleware import require_user
 from src.auth.sessions import verify_session_token
+from src.config import settings
 from src.db.models import SyncRun, User
 from src.db.repositories import (
     create_sis_integration,
     create_sync_run,
+    create_widget,
     get_notion_integration,
     get_sis_integration_by_id,
+    get_widget,
     get_workspace_config,
     list_recent_sync_runs,
     list_sis_integrations,
+    list_widgets,
     soft_delete_sis_integration,
     update_sis_integration,
 )
@@ -299,6 +304,73 @@ async def sync_now(
     response.headers["HX-Retarget"] = "#activity-feed"
     response.headers["HX-Reswap"] = "outerHTML"
     return response
+
+
+# ─── Widgets ──────────────────────────────────────────────────────────────────
+
+WIDGET_TYPES = {"countdown", "clock"}
+
+
+def _default_widget_config(widget_type: str) -> dict:
+    if widget_type == "clock":
+        return {"title": "", "bg": "#6366f1", "color": "#ffffff", "hour12": True, "tz": ""}
+    return {
+        "title": "Countdown",
+        "bg": "#6366f1",
+        "color": "#ffffff",
+        "target": "",
+        "done_text": "It's here!",
+    }
+
+
+def _embed_url(widget_id: uuid.UUID) -> str:
+    return f"{settings.app_base_url.rstrip('/')}/w/{widget_id}"
+
+
+@router.get("/widgets")
+async def widgets_page(
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_session),
+):
+    widgets = await list_widgets(db, user.id)
+    return templates.TemplateResponse(
+        request=request,
+        name="widgets.html",
+        context={
+            "user": user,
+            "widgets": [(w, _embed_url(w.id)) for w in widgets],
+        },
+    )
+
+
+@router.post("/widgets")
+async def widget_create(
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_session),
+    type: str = Form(...),
+):
+    if type not in WIDGET_TYPES:
+        raise HTTPException(400, "Unknown widget type")
+    await create_widget(db, user_id=user.id, type=type, config=_default_widget_config(type))
+    await db.commit()
+    return RedirectResponse("/widgets", status_code=303)
+
+
+@router.get("/w/{widget_id}")
+async def widget_render(
+    widget_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_session),
+):
+    widget = await get_widget(db, widget_id)
+    if not widget:
+        raise HTTPException(404)
+    return templates.TemplateResponse(
+        request=request,
+        name="widget.html",
+        context={"widget": widget, "config_json": json.dumps(widget.config or {})},
+    )
 
 
 # ─── Integration modal content ────────────────────────────────────────────────

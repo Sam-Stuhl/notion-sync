@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import SISIntegration, NotionIntegration, SyncRun, User, WorkspaceConfig
+from .models import SISIntegration, NotionIntegration, SyncRun, User, WorkspaceConfig, Widget
 from .encryption import encrypt
 
 
@@ -160,6 +160,38 @@ async def soft_delete_sis_integration(
     integration.deleted_at = datetime.now(timezone.utc)
     integration.is_active = False
     await session.flush()
+
+
+async def get_widget(session: AsyncSession, widget_id: uuid.UUID) -> Widget | None:
+    result = await session.execute(
+        select(Widget)
+        .where(Widget.id == widget_id)
+        .where(Widget.deleted_at.is_(None))
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_widgets(session: AsyncSession, user_id: uuid.UUID) -> list[Widget]:
+    result = await session.execute(
+        select(Widget)
+        .where(Widget.user_id == user_id)
+        .where(Widget.deleted_at.is_(None))
+        .order_by(Widget.created_at)
+    )
+    return list(result.scalars().all())
+
+
+async def create_widget(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    type: str,
+    config: dict,
+    name: str | None = None,
+) -> Widget:
+    widget = Widget(user_id=user_id, type=type, config=config, name=name)
+    session.add(widget)
+    await session.flush()
+    return widget
 
 
 async def upsert_notion_integration(

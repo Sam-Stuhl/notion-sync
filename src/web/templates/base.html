@@ -43,6 +43,9 @@
             </a>
             <div class="flex items-center gap-4">
                 {% if user is defined and user %}
+                    <a href="/widgets" class="text-sm text-base-content/40 hover:text-base-content/70 transition-colors hidden sm:inline">
+                        Widgets
+                    </a>
                     {% if user.avatar_url %}
                         <img src="{{ user.avatar_url }}" class="w-7 h-7 rounded-full" alt="">
                     {% endif %}

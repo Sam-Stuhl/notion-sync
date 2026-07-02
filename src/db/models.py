@@ -27,6 +27,7 @@ class User(Base):
     sis_integrations: Mapped[list["SISIntegration"]] = relationship(back_populates="user")
     workspace_configs: Mapped[list["WorkspaceConfig"]] = relationship(back_populates="user")
     sync_runs: Mapped[list["SyncRun"]] = relationship(back_populates="user")
+    widgets: Mapped[list["Widget"]] = relationship(back_populates="user")
 
 
 class NotionIntegration(Base):
@@ -116,3 +117,18 @@ class SyncRun(Base):
 
     user: Mapped["User"] = relationship(back_populates="sync_runs")
     sis_integration: Mapped[Optional["SISIntegration"]] = relationship(back_populates="sync_runs")
+
+
+class Widget(Base):
+    __tablename__ = "widgets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    type: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(Text)
+    config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="widgets")
