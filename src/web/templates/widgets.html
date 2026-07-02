@@ -27,15 +27,14 @@
     {% else %}
         <div class="space-y-3">
             {% for widget, url in widgets %}
-            <div class="flex items-center gap-4 border border-base-300 rounded-lg p-4">
+            <a href="/widgets/{{ widget.id }}/edit" class="flex items-center gap-4 border border-base-300 rounded-lg p-4 hover:border-primary/50 transition-colors">
                 <div class="w-2 h-2 rounded-full bg-primary shrink-0"></div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium capitalize">{{ widget.name or widget.type }}</div>
+                    <div class="text-sm font-medium capitalize">{{ widget.config.title or widget.type }}</div>
                     <div class="text-xs text-base-content/40 truncate font-mono">{{ url }}</div>
                 </div>
-                <a href="{{ url }}" target="_blank" class="btn btn-ghost btn-xs">Preview</a>
-                <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('{{ url }}')">Copy URL</button>
-            </div>
+                <span class="btn btn-ghost btn-xs">Edit</span>
+            </a>
             {% endfor %}
         </div>
     {% endif %}

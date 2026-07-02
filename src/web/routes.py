@@ -1,7 +1,7 @@
 import json
 import pathlib
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import jwt
@@ -21,12 +21,15 @@ from src.db.repositories import (
     get_notion_integration,
     get_sis_integration_by_id,
     get_widget,
+    get_widget_for_user,
     get_workspace_config,
     list_recent_sync_runs,
     list_sis_integrations,
     list_widgets,
     soft_delete_sis_integration,
+    soft_delete_widget,
     update_sis_integration,
+    update_widget,
 )
 from src.db.session import get_session
 from src.web.services import SERVICES, SERVICES_BY_ID
@@ -314,11 +317,12 @@ WIDGET_TYPES = {"countdown", "clock"}
 def _default_widget_config(widget_type: str) -> dict:
     if widget_type == "clock":
         return {"title": "", "bg": "#6366f1", "color": "#ffffff", "hour12": True, "tz": ""}
+    target = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M")
     return {
         "title": "Countdown",
         "bg": "#6366f1",
         "color": "#ffffff",
-        "target": "",
+        "target": target,
         "done_text": "It's here!",
     }
 
@@ -352,8 +356,64 @@ async def widget_create(
 ):
     if type not in WIDGET_TYPES:
         raise HTTPException(400, "Unknown widget type")
-    await create_widget(db, user_id=user.id, type=type, config=_default_widget_config(type))
+    widget = await create_widget(db, user_id=user.id, type=type, config=_default_widget_config(type))
     await db.commit()
+    return RedirectResponse(f"/widgets/{widget.id}/edit", status_code=303)
+
+
+@router.get("/widgets/{widget_id}/edit")
+async def widget_edit_page(
+    widget_id: uuid.UUID,
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_session),
+):
+    widget = await get_widget_for_user(db, widget_id, user.id)
+    if not widget:
+        raise HTTPException(404)
+    return templates.TemplateResponse(
+        request=request,
+        name="widget_edit.html",
+        context={"user": user, "widget": widget, "embed_url": _embed_url(widget.id)},
+    )
+
+
+@router.post("/widgets/{widget_id}")
+async def widget_update(
+    widget_id: uuid.UUID,
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_session),
+):
+    widget = await get_widget_for_user(db, widget_id, user.id)
+    if not widget:
+        raise HTTPException(404)
+    form = await request.form()
+    cfg = dict(widget.config or {})
+    cfg["title"] = (form.get("title") or "").strip()
+    cfg["bg"] = form.get("bg") or "#6366f1"
+    cfg["color"] = form.get("color") or "#ffffff"
+    if widget.type == "countdown":
+        cfg["target"] = form.get("target") or ""
+        cfg["done_text"] = (form.get("done_text") or "").strip()
+    elif widget.type == "clock":
+        cfg["tz"] = (form.get("tz") or "").strip()
+        cfg["hour12"] = form.get("hour12") == "on"
+    await update_widget(db, widget, cfg)
+    await db.commit()
+    return RedirectResponse(f"/widgets/{widget_id}/edit", status_code=303)
+
+
+@router.post("/widgets/{widget_id}/delete")
+async def widget_delete(
+    widget_id: uuid.UUID,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_session),
+):
+    widget = await get_widget_for_user(db, widget_id, user.id)
+    if widget:
+        await soft_delete_widget(db, widget)
+        await db.commit()
     return RedirectResponse("/widgets", status_code=303)
 
 

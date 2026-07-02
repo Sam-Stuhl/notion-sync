@@ -181,6 +181,18 @@ async def list_widgets(session: AsyncSession, user_id: uuid.UUID) -> list[Widget
     return list(result.scalars().all())
 
 
+async def get_widget_for_user(
+    session: AsyncSession, widget_id: uuid.UUID, user_id: uuid.UUID
+) -> Widget | None:
+    result = await session.execute(
+        select(Widget)
+        .where(Widget.id == widget_id)
+        .where(Widget.user_id == user_id)
+        .where(Widget.deleted_at.is_(None))
+    )
+    return result.scalar_one_or_none()
+
+
 async def create_widget(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -192,6 +204,17 @@ async def create_widget(
     session.add(widget)
     await session.flush()
     return widget
+
+
+async def update_widget(session: AsyncSession, widget: Widget, config: dict) -> None:
+    widget.config = config
+    await session.flush()
+
+
+async def soft_delete_widget(session: AsyncSession, widget: Widget) -> None:
+    from datetime import datetime, timezone
+    widget.deleted_at = datetime.now(timezone.utc)
+    await session.flush()
 
 
 async def upsert_notion_integration(
