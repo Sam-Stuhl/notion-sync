@@ -317,20 +317,39 @@ async def sync_now(
 
 # ─── Widgets ──────────────────────────────────────────────────────────────────
 
-WIDGET_TYPES = {"countdown", "clock"}
+WIDGET_STYLES = {
+    "countdown": ["blocks", "inline", "minimal"],
+    "clock": ["digital", "analog"],
+    "progress": ["bar", "ring", "minimal"],
+    "quotes": ["card", "minimal"],
+}
+WIDGET_TYPES = set(WIDGET_STYLES)
 
 
 def _default_widget_config(widget_type: str) -> dict:
+    base = {"bg": "#6366f1", "color": "#ffffff", "style": WIDGET_STYLES[widget_type][0]}
     if widget_type == "clock":
-        return {"title": "", "bg": "#6366f1", "color": "#ffffff", "hour12": True, "tz": ""}
+        return {**base, "title": "", "hour12": True, "show_date": True, "tz": ""}
+    if widget_type == "progress":
+        return {**base, "title": "2026", "range": "year", "start": "", "end": "", "accent": "#ffffff"}
+    if widget_type == "quotes":
+        return {
+            **base, "title": "", "interval": 8,
+            "quotes": [{"text": "Stay hungry, stay foolish.", "author": "Steve Jobs"}],
+        }
     target = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M")
-    return {
-        "title": "Countdown",
-        "bg": "#6366f1",
-        "color": "#ffffff",
-        "target": target,
-        "done_text": "It's here!",
-    }
+    return {**base, "title": "Countdown", "target": target, "done_text": "It's here!"}
+
+
+def _parse_quotes(text: str) -> list[dict]:
+    quotes = []
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        q, _, author = line.partition("|")
+        quotes.append({"text": q.strip(), "author": author.strip()})
+    return quotes
 
 
 def _embed_url(widget_id: uuid.UUID) -> str:
@@ -348,12 +367,37 @@ def _build_widget_config(widget_type: str, src, base: dict | None = None) -> dic
     cfg["title"] = (src.get("title") or "").strip()
     cfg["bg"] = src.get("bg") or "#6366f1"
     cfg["color"] = src.get("color") or "#ffffff"
+
+    allowed = WIDGET_STYLES.get(widget_type, [])
+    style = src.get("style")
+    cfg["style"] = style if style in allowed else (allowed[0] if allowed else None)
+
+    def truthy(v):
+        return v in (True, "on", "true", "1")
+
     if widget_type == "countdown":
         cfg["target"] = src.get("target") or ""
         cfg["done_text"] = (src.get("done_text") or "").strip()
     elif widget_type == "clock":
         cfg["tz"] = (src.get("tz") or "").strip()
-        cfg["hour12"] = src.get("hour12") in (True, "on", "true", "1")
+        cfg["hour12"] = truthy(src.get("hour12"))
+        cfg["show_date"] = truthy(src.get("show_date"))
+    elif widget_type == "progress":
+        rng = src.get("range")
+        cfg["range"] = rng if rng in ("year", "month", "day", "custom") else "year"
+        cfg["start"] = src.get("start") or ""
+        cfg["end"] = src.get("end") or ""
+        cfg["accent"] = src.get("accent") or "#ffffff"
+    elif widget_type == "quotes":
+        raw = src.get("quotes_text")
+        if raw is not None:
+            cfg["quotes"] = _parse_quotes(raw)
+        elif "quotes" not in cfg:
+            cfg["quotes"] = []
+        try:
+            cfg["interval"] = max(2, int(src.get("interval") or 8))
+        except (TypeError, ValueError):
+            cfg["interval"] = 8
     return cfg
 
 
@@ -400,25 +444,14 @@ async def widget_edit_page(
     return templates.TemplateResponse(
         request=request,
         name="widget_edit.html",
-        context={"user": user, "widget": widget, "embed_url": _embed_url(widget.id)},
+        context={
+            "user": user,
+            "widget": widget,
+            "embed_url": _embed_url(widget.id),
+            "edit_token": create_widget_edit_token(str(widget.id), str(user.id)),
+            "app_origin": _app_origin(),
+        },
     )
-
-
-@router.post("/widgets/{widget_id}")
-async def widget_update(
-    widget_id: uuid.UUID,
-    request: Request,
-    user: User = Depends(require_user),
-    db: AsyncSession = Depends(get_session),
-):
-    widget = await get_widget_for_user(db, widget_id, user.id)
-    if not widget:
-        raise HTTPException(404)
-    form = await request.form()
-    cfg = _build_widget_config(widget.type, form, base=widget.config)
-    await update_widget(db, widget, cfg)
-    await db.commit()
-    return RedirectResponse(f"/widgets/{widget_id}/edit", status_code=303)
 
 
 @router.post("/widgets/{widget_id}/delete")
@@ -488,7 +521,11 @@ async def widget_render(
     return templates.TemplateResponse(
         request=request,
         name="widget.html",
-        context={"widget": widget, "config_json": json.dumps(widget.config or {})},
+        context={
+            "widget": widget,
+            "config_json": json.dumps(widget.config or {}),
+            "styles_json": json.dumps(WIDGET_STYLES),
+        },
     )
 
 

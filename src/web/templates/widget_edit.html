@@ -2,7 +2,6 @@
 {% block title %}Edit widget · Notion Sync{% endblock %}
 
 {% block content %}
-{% set cfg = widget.config or {} %}
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <a href="/widgets" class="text-sm text-base-content/50 hover:text-base-content/80">← All widgets</a>
@@ -12,66 +11,21 @@
         </form>
     </div>
 
-    <h1 class="text-xl font-semibold tracking-tight capitalize">{{ widget.type }} widget</h1>
-
-    <div class="grid gap-6 md:grid-cols-2">
-        <!-- Editor -->
-        <form method="post" action="/widgets/{{ widget.id }}" class="space-y-4">
-            <div>
-                <label class="text-xs font-medium text-base-content/60">Title</label>
-                <input name="title" value="{{ cfg.title or '' }}" class="input input-bordered input-sm w-full mt-1">
-            </div>
-
-            {% if widget.type == 'countdown' %}
-            <div>
-                <label class="text-xs font-medium text-base-content/60">Count down to</label>
-                <input type="datetime-local" name="target" value="{{ cfg.target or '' }}" class="input input-bordered input-sm w-full mt-1">
-            </div>
-            <div>
-                <label class="text-xs font-medium text-base-content/60">Message when it hits zero</label>
-                <input name="done_text" value="{{ cfg.done_text or '' }}" class="input input-bordered input-sm w-full mt-1">
-            </div>
-            {% elif widget.type == 'clock' %}
-            <div>
-                <label class="text-xs font-medium text-base-content/60">Timezone <span class="opacity-50">(e.g. America/New_York, blank = viewer's local)</span></label>
-                <input name="tz" value="{{ cfg.tz or '' }}" placeholder="America/New_York" class="input input-bordered input-sm w-full mt-1">
-            </div>
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="hour12" class="checkbox checkbox-sm" {% if cfg.hour12 %}checked{% endif %}>
-                12-hour clock (AM/PM)
-            </label>
-            {% endif %}
-
-            <div class="flex gap-4">
-                <div>
-                    <label class="text-xs font-medium text-base-content/60 block">Background</label>
-                    <input type="color" name="bg" value="{{ cfg.bg if cfg.bg and cfg.bg.startswith('#') else '#6366f1' }}" class="mt-1 h-9 w-16 rounded cursor-pointer">
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-base-content/60 block">Text</label>
-                    <input type="color" name="color" value="{{ cfg.color or '#ffffff' }}" class="mt-1 h-9 w-16 rounded cursor-pointer">
-                </div>
-            </div>
-
-            <button class="btn btn-primary btn-sm">Save changes</button>
-        </form>
-
-        <!-- Live preview -->
-        <div>
-            <div class="text-xs font-medium text-base-content/60 mb-1">Preview</div>
-            <iframe src="{{ embed_url }}?v={{ widget.updated_at.timestamp()|int }}"
-                    class="w-full h-48 rounded-lg border border-base-300"></iframe>
-        </div>
+    <div>
+        <h1 class="text-xl font-semibold tracking-tight capitalize">{{ widget.type }} widget</h1>
+        <p class="text-sm text-base-content/50">Hover the widget and click the ⚙ to customize it. Changes save instantly and update in Notion.</p>
     </div>
 
-    <!-- Embed instructions -->
+    <iframe id="preview" src="{{ embed_url }}"
+            class="w-full rounded-xl border border-base-300" style="height: 380px;"></iframe>
+
     <div class="border border-base-300 rounded-lg p-5 space-y-3 bg-base-200/40">
         <h2 class="text-sm font-semibold">Add this to Notion</h2>
         <ol class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
             <li>Copy the embed URL below.</li>
             <li>In your Notion page, type <code class="px-1 rounded bg-base-300">/embed</code> and press Enter.</li>
             <li>Paste the URL and click <strong>Embed link</strong>.</li>
-            <li>Drag the widget's edge to resize it. Edits you save here update the widget in Notion automatically.</li>
+            <li>Drag the widget's edge to resize. Hover it and click ⚙ to edit right inside Notion.</li>
         </ol>
         <div class="flex items-center gap-2">
             <input readonly value="{{ embed_url }}" class="input input-bordered input-sm flex-1 font-mono text-xs" onclick="this.select()">
@@ -79,4 +33,16 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Hand the edit token to the same-origin preview iframe so ⚙ opens the editor
+    // directly here (no pop-up needed inside your own dashboard).
+    (function () {
+        var iframe = document.getElementById('preview');
+        var TOKEN = {{ edit_token | tojson }}, ORIGIN = {{ app_origin | tojson }}, WID = "{{ widget.id }}";
+        iframe.addEventListener('load', function () {
+            iframe.contentWindow.postMessage({ source: 'notion-sync-widget', widgetId: WID, token: TOKEN }, ORIGIN);
+        });
+    })();
+</script>
 {% endblock %}

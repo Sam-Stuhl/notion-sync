@@ -17,24 +17,30 @@
   }
   #widget { width: 100%; height: 100%; display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: clamp(8px, 3vh, 20px); padding: 5%; }
-  #title { font-size: clamp(13px, 4.5vw, 20px); font-weight: 600; opacity: 0.9;
-           letter-spacing: 0.01em; }
+  #title { font-size: clamp(13px, 4.5vw, 20px); font-weight: 600; opacity: 0.9; letter-spacing: 0.01em; }
 
-  /* countdown */
+  .big { font-size: clamp(32px, 15vw, 76px); font-weight: 800; font-variant-numeric: tabular-nums;
+         line-height: 0.95; letter-spacing: -0.02em; }
+  .sub { font-size: clamp(11px, 3.4vw, 16px); font-weight: 500; opacity: 0.6; letter-spacing: 0.02em; }
+
+  /* countdown blocks */
   .units { display: flex; gap: clamp(10px, 4vw, 30px); align-items: flex-start; }
   .unit { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: clamp(42px, 14vw, 78px); }
   .unit .n { font-size: clamp(30px, 13vw, 68px); font-weight: 800; font-variant-numeric: tabular-nums;
              line-height: 0.95; letter-spacing: -0.02em; }
   .unit .l { font-size: clamp(9px, 2.4vw, 12px); text-transform: uppercase; letter-spacing: 0.14em;
              font-weight: 600; opacity: 0.55; }
+  #done { font-size: clamp(24px, 8vw, 48px); font-weight: 700; }
 
-  /* clock */
-  #time { font-size: clamp(34px, 17vw, 82px); font-weight: 700; font-variant-numeric: tabular-nums;
-          line-height: 1; letter-spacing: -0.02em; }
-  #date { font-size: clamp(11px, 3.4vw, 16px); font-weight: 500; opacity: 0.6; letter-spacing: 0.02em; }
+  /* progress */
+  .track { width: min(82%, 360px); height: clamp(10px, 3vh, 16px); border-radius: 999px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+  svg.ring, svg.clockface { width: clamp(120px, 46vw, 250px); height: auto; display: block; }
 
-  /* done state */
-  #done { font-size: clamp(24px, 8vw, 48px); font-weight: 700; letter-spacing: -0.01em; }
+  /* quotes */
+  #quote { transition: opacity 0.35s ease; }
+  .quotetext { font-size: clamp(16px, 5vw, 27px); font-weight: 600; line-height: 1.32; max-width: 92%; margin: 0 auto; }
+  .quoteauthor { margin-top: clamp(8px, 2vh, 14px); font-size: clamp(11px, 3vw, 15px); opacity: 0.7; font-weight: 500; }
 
   /* edit affordances */
   #gear { position: fixed; top: 10px; right: 10px; width: 30px; height: 30px; border: none;
@@ -43,15 +49,16 @@
   body:hover #gear { opacity: 0.65; }
   #gear:hover { opacity: 1; }
   #panel { position: fixed; inset: 0; background: rgba(15,23,42,0.72); display: none;
-           align-items: center; justify-content: center; padding: 16px; }
+           align-items: center; justify-content: center; padding: 16px; z-index: 10; }
   #panel.open { display: flex; }
   #card { background: #fff; color: #1e293b; border-radius: 14px; padding: 20px; width: 100%;
-          max-width: 320px; text-align: left; max-height: 100%; overflow: auto;
+          max-width: 340px; text-align: left; max-height: 100%; overflow: auto;
           font-family: 'Inter', sans-serif; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
   #card h3 { font-size: 14px; margin-bottom: 6px; }
   #card label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin: 12px 0 4px; }
-  #card input[type=text], #card input[type=datetime-local] {
+  #card input[type=text], #card input[type=number], #card input[type=datetime-local], #card select, #card textarea {
     width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; }
+  #card textarea { min-height: 76px; resize: vertical; }
   #card .colors { display: flex; gap: 16px; }
   #card input[type=color] { width: 48px; height: 34px; border: 1px solid #cbd5e1; border-radius: 7px; padding: 2px; }
   #card .chk { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; }
@@ -62,10 +69,7 @@
 </style>
 </head>
 <body>
-  <div id="widget">
-    <div id="title"></div>
-    <div id="body"></div>
-  </div>
+  <div id="widget"><div id="title"></div><div id="body"></div></div>
   <button id="gear" title="Edit">⚙</button>
   <div id="panel"><div id="card"></div></div>
 
@@ -75,12 +79,22 @@
     var TYPE = {{ widget.type | tojson }};
     var WID = "{{ widget.id }}";
     var TOKEN_KEY = 'notion-sync-widget-token:' + WID;
+    var STYLES = {{ styles_json | safe }};
 
     var titleEl = document.getElementById('title');
     var bodyEl = document.getElementById('body');
     var timer = null;
 
     function pad(n) { return String(n).padStart(2, '0'); }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function setTimer(fn, ms) { clearInterval(timer); fn(); timer = setInterval(fn, ms || 1000); }
+    function hexRgba(hex, a) {
+      var h = (hex || '#ffffff').replace('#', '');
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      var n = parseInt(h, 16);
+      return 'rgba(' + ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255) + ',' + a + ')';
+    }
+    function style() { var a = STYLES[TYPE] || []; return (a.indexOf(cfg.style) >= 0) ? cfg.style : a[0]; }
 
     function applyStyle() {
       document.body.style.background = cfg.bg || '#6366f1';
@@ -89,64 +103,149 @@
       titleEl.style.display = cfg.title ? '' : 'none';
     }
 
-    function build() {
-      clearInterval(timer);
-      applyStyle();
-      if (TYPE === 'clock') {
-        bodyEl.innerHTML = '<div id="time"></div><div id="date"></div>';
-        var timeEl = document.getElementById('time'), dateEl = document.getElementById('date');
-        var tick = function () {
-          var t = { hour12: !!cfg.hour12, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-          var d = { weekday: 'long', month: 'long', day: 'numeric' };
-          if (cfg.tz) { t.timeZone = cfg.tz; d.timeZone = cfg.tz; }
-          var now = new Date();
-          try { timeEl.textContent = now.toLocaleTimeString([], t); dateEl.textContent = now.toLocaleDateString([], d); }
-          catch (e) { timeEl.textContent = now.toLocaleTimeString(); dateEl.textContent = now.toLocaleDateString(); }
-        };
-        tick(); timer = setInterval(tick, 1000);
-      } else {
-        bodyEl.innerHTML =
-          '<div class="units">' +
+    // ─── Renderers ──────────────────────────────────────────────────────────
+    function renderCountdown() {
+      var target = cfg.target ? new Date(cfg.target).getTime() : Date.now();
+      var st = style();
+      function parts() {
+        var diff = Math.max(0, target - Date.now());
+        var t = Math.floor(diff / 1000);
+        return { diff: diff, d: Math.floor(t/86400), h: Math.floor((t%86400)/3600), m: Math.floor((t%3600)/60), s: t%60 };
+      }
+      function done() { clearInterval(timer); bodyEl.innerHTML = '<div id="done">' + (cfg.done_text || '🎉') + '</div>'; }
+      if (st === 'blocks') {
+        bodyEl.innerHTML = '<div class="units">' +
           '<div class="unit"><span class="n" id="d">0</span><span class="l">Days</span></div>' +
           '<div class="unit"><span class="n" id="h">00</span><span class="l">Hours</span></div>' +
           '<div class="unit"><span class="n" id="m">00</span><span class="l">Minutes</span></div>' +
-          '<div class="unit"><span class="n" id="s">00</span><span class="l">Seconds</span></div>' +
-          '</div>';
-        var dEl = document.getElementById('d'), hEl = document.getElementById('h'),
-            mEl = document.getElementById('m'), sEl = document.getElementById('s');
-        var target = cfg.target ? new Date(cfg.target).getTime() : Date.now();
-        var count = function () {
-          var diff = Math.max(0, target - Date.now());
-          if (diff === 0 && cfg.done_text) { clearInterval(timer); bodyEl.innerHTML = '<div id="done">' + cfg.done_text + '</div>'; return; }
-          var t = Math.floor(diff / 1000);
-          dEl.textContent = Math.floor(t / 86400);
-          hEl.textContent = pad(Math.floor((t % 86400) / 3600));
-          mEl.textContent = pad(Math.floor((t % 3600) / 60));
-          sEl.textContent = pad(t % 60);
-        };
-        count(); timer = setInterval(count, 1000);
+          '<div class="unit"><span class="n" id="s">00</span><span class="l">Seconds</span></div></div>';
+        var d=document.getElementById('d'),h=document.getElementById('h'),m=document.getElementById('m'),s=document.getElementById('s');
+        setTimer(function () { var p=parts(); if(p.diff===0&&cfg.done_text){done();return;} d.textContent=p.d;h.textContent=pad(p.h);m.textContent=pad(p.m);s.textContent=pad(p.s); });
+      } else if (st === 'inline') {
+        bodyEl.innerHTML = '<div class="big" id="main"></div>';
+        var main = document.getElementById('main');
+        setTimer(function () { var p=parts(); if(p.diff===0&&cfg.done_text){done();return;} main.textContent = p.d + 'd ' + pad(p.h) + ':' + pad(p.m) + ':' + pad(p.s); });
+      } else { // minimal
+        bodyEl.innerHTML = '<div class="big" id="main">0</div><div class="sub">days remaining</div>';
+        var mn = document.getElementById('main');
+        setTimer(function () { var p=parts(); if(p.diff===0&&cfg.done_text){done();return;} mn.textContent = p.d; });
       }
     }
 
-    // ─── Editing ──────────────────────────────────────────────────────────────
-    var panel = document.getElementById('panel'), card = document.getElementById('card');
+    function renderClock() {
+      if (style() === 'analog') {
+        bodyEl.innerHTML =
+          '<svg class="clockface" viewBox="0 0 100 100">' +
+          '<circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="2" opacity="0.35"/>' +
+          '<line id="hh" x1="50" y1="50" x2="50" y2="28" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' +
+          '<line id="mh" x1="50" y1="50" x2="50" y2="18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>' +
+          '<line id="sh" x1="50" y1="50" x2="50" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>' +
+          '<circle cx="50" cy="50" r="2.5" fill="currentColor"/></svg>';
+        var hh=document.getElementById('hh'),mh=document.getElementById('mh'),sh=document.getElementById('sh');
+        setTimer(function () {
+          var n = new Date(); var s=n.getSeconds(), m=n.getMinutes(), h=n.getHours()%12;
+          sh.setAttribute('transform','rotate('+(s*6)+' 50 50)');
+          mh.setAttribute('transform','rotate('+(m*6+s*0.1)+' 50 50)');
+          hh.setAttribute('transform','rotate('+(h*30+m*0.5)+' 50 50)');
+        });
+      } else { // digital
+        bodyEl.innerHTML = '<div class="big" id="time"></div>' + (cfg.show_date !== false ? '<div class="sub" id="date"></div>' : '');
+        var timeEl=document.getElementById('time'), dateEl=document.getElementById('date');
+        setTimer(function () {
+          var t={hour12:!!cfg.hour12,hour:'2-digit',minute:'2-digit',second:'2-digit'}, d={weekday:'long',month:'long',day:'numeric'};
+          if(cfg.tz){t.timeZone=cfg.tz;d.timeZone=cfg.tz;}
+          var now=new Date();
+          try{ timeEl.textContent=now.toLocaleTimeString([],t); if(dateEl)dateEl.textContent=now.toLocaleDateString([],d);}
+          catch(e){ timeEl.textContent=now.toLocaleTimeString(); if(dateEl)dateEl.textContent=now.toLocaleDateString(); }
+        });
+      }
+    }
 
+    function renderProgress() {
+      var accent = cfg.accent || '#ffffff';
+      function pct() {
+        var now = Date.now(), n = new Date(), start, end;
+        if (cfg.range === 'custom') { start = cfg.start ? new Date(cfg.start).getTime() : now; end = cfg.end ? new Date(cfg.end).getTime() : now; }
+        else if (cfg.range === 'month') { start = new Date(n.getFullYear(), n.getMonth(), 1).getTime(); end = new Date(n.getFullYear(), n.getMonth()+1, 1).getTime(); }
+        else if (cfg.range === 'day') { start = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); end = start + 86400000; }
+        else { start = new Date(n.getFullYear(), 0, 1).getTime(); end = new Date(n.getFullYear()+1, 0, 1).getTime(); }
+        return end > start ? clamp((now - start) / (end - start) * 100, 0, 100) : 0;
+      }
+      var st = style();
+      if (st === 'ring') {
+        var C = 2 * Math.PI * 42;
+        bodyEl.innerHTML = '<svg class="ring" viewBox="0 0 100 100">' +
+          '<circle cx="50" cy="50" r="42" fill="none" stroke="' + hexRgba(cfg.color, 0.25) + '" stroke-width="9"/>' +
+          '<circle id="rf" cx="50" cy="50" r="42" fill="none" stroke="' + accent + '" stroke-width="9" stroke-linecap="round" ' +
+          'stroke-dasharray="' + C + '" stroke-dashoffset="' + C + '" transform="rotate(-90 50 50)" style="transition:stroke-dashoffset .5s ease"/>' +
+          '<text id="rt" x="50" y="50" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-size="20" font-weight="800">0%</text></svg>';
+        var rf=document.getElementById('rf'), rt=document.getElementById('rt');
+        setTimer(function () { var p=pct(); rf.setAttribute('stroke-dashoffset', C*(1-p/100)); rt.textContent=Math.floor(p)+'%'; }, 1000);
+      } else if (st === 'minimal') {
+        bodyEl.innerHTML = '<div class="big" id="pt">0%</div>';
+        var pt=document.getElementById('pt');
+        setTimer(function () { pt.textContent = Math.floor(pct()) + '%'; }, 1000);
+      } else { // bar
+        bodyEl.innerHTML = '<div class="track" style="background:' + hexRgba(cfg.color, 0.25) + '"><div class="fill" id="pf" style="background:' + accent + ';width:0%"></div></div><div class="sub" id="pl">0%</div>';
+        var pf=document.getElementById('pf'), pl=document.getElementById('pl');
+        setTimer(function () { var p=pct(); pf.style.width=p+'%'; pl.textContent=Math.floor(p)+'%'; }, 1000);
+      }
+    }
+
+    function renderQuotes() {
+      var qs = (cfg.quotes && cfg.quotes.length) ? cfg.quotes : [{ text: 'Add some quotes ✏️', author: '' }];
+      var minimal = style() === 'minimal';
+      bodyEl.innerHTML = '<div id="quote"><div class="quotetext" style="' + (minimal ? 'font-weight:500' : '') + '"></div><div class="quoteauthor"></div></div>';
+      var q = document.getElementById('quote'), qt = q.querySelector('.quotetext'), qa = q.querySelector('.quoteauthor');
+      var i = 0;
+      function show() { var item = qs[i % qs.length]; qt.textContent = (minimal ? '' : '“') + item.text + (minimal ? '' : '”'); qa.textContent = item.author ? '— ' + item.author : ''; }
+      show();
+      if (qs.length > 1) {
+        clearInterval(timer);
+        timer = setInterval(function () { q.style.opacity = 0; setTimeout(function () { i++; show(); q.style.opacity = 1; }, 350); }, (cfg.interval || 8) * 1000);
+      }
+    }
+
+    var RENDER = { countdown: renderCountdown, clock: renderClock, progress: renderProgress, quotes: renderQuotes };
+    function build() { clearInterval(timer); applyStyle(); (RENDER[TYPE] || renderCountdown)(); }
+
+    // ─── Editor ─────────────────────────────────────────────────────────────
+    var panel = document.getElementById('panel'), card = document.getElementById('card');
+    var awaitingUnlock = false;
     function esc(s) { return (s || '').replace(/"/g, '&quot;'); }
     function field(label, html) { return '<label>' + label + '</label>' + html; }
+    function styleSelect() {
+      var opts = (STYLES[TYPE] || []).map(function (s) {
+        return '<option value="' + s + '"' + (s === style() ? ' selected' : '') + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+      }).join('');
+      return field('Style', '<select id="f_style">' + opts + '</select>');
+    }
 
     function openEditor() {
       var bg = (cfg.bg && cfg.bg.charAt(0) === '#') ? cfg.bg : '#6366f1';
       var h = '<h3>Edit widget</h3>';
       h += field('Title', '<input type="text" id="f_title" value="' + esc(cfg.title) + '">');
+      h += styleSelect();
       if (TYPE === 'countdown') {
         h += field('Count down to', '<input type="datetime-local" id="f_target" value="' + (cfg.target || '') + '">');
         h += field('Message at zero', '<input type="text" id="f_done" value="' + esc(cfg.done_text) + '">');
-      } else {
+      } else if (TYPE === 'clock') {
         h += field('Timezone (blank = local)', '<input type="text" id="f_tz" value="' + esc(cfg.tz) + '" placeholder="America/New_York">');
         h += '<div class="chk"><input type="checkbox" id="f_h12"' + (cfg.hour12 ? ' checked' : '') + '><span>12-hour (AM/PM)</span></div>';
+        h += '<div class="chk"><input type="checkbox" id="f_date"' + (cfg.show_date !== false ? ' checked' : '') + '><span>Show date</span></div>';
+      } else if (TYPE === 'progress') {
+        var ranges = ['year','month','day','custom'].map(function(r){return '<option value="'+r+'"'+(cfg.range===r?' selected':'')+'>'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>';}).join('');
+        h += field('Range', '<select id="f_range">' + ranges + '</select>');
+        h += field('Custom start', '<input type="datetime-local" id="f_start" value="' + (cfg.start || '') + '">');
+        h += field('Custom end', '<input type="datetime-local" id="f_end" value="' + (cfg.end || '') + '">');
+      } else if (TYPE === 'quotes') {
+        var text = (cfg.quotes || []).map(function (q) { return q.text + (q.author ? ' | ' + q.author : ''); }).join('\n');
+        h += field('Quotes (one per line, use | for author)', '<textarea id="f_quotes">' + esc(text) + '</textarea>');
+        h += field('Seconds per quote', '<input type="number" id="f_interval" min="2" value="' + (cfg.interval || 8) + '">');
       }
       h += '<div class="colors"><div><label>Background</label><input type="color" id="f_bg" value="' + bg + '"></div>' +
-           '<div><label>Text</label><input type="color" id="f_color" value="' + (cfg.color || '#ffffff') + '"></div></div>';
+           '<div><label>Text</label><input type="color" id="f_color" value="' + (cfg.color || '#ffffff') + '"></div>' +
+           (TYPE === 'progress' ? '<div><label>Accent</label><input type="color" id="f_accent" value="' + (cfg.accent || '#ffffff') + '"></div>' : '') + '</div>';
       h += '<div class="row"><button id="cancel">Cancel</button><button id="save">Save</button></div>';
       card.innerHTML = h;
       document.getElementById('cancel').onclick = function () { panel.classList.remove('open'); };
@@ -154,30 +253,24 @@
       panel.classList.add('open');
     }
 
+    function v(id) { var e = document.getElementById(id); return e ? (e.type === 'checkbox' ? e.checked : e.value) : undefined; }
+
     function save() {
-      var next = { title: document.getElementById('f_title').value,
-                   bg: document.getElementById('f_bg').value,
-                   color: document.getElementById('f_color').value };
-      if (TYPE === 'countdown') {
-        next.target = document.getElementById('f_target').value;
-        next.done_text = document.getElementById('f_done').value;
-      } else {
-        next.tz = document.getElementById('f_tz').value;
-        next.hour12 = document.getElementById('f_h12').checked;
-      }
+      var next = { title: v('f_title'), style: v('f_style'), bg: v('f_bg'), color: v('f_color') };
+      if (TYPE === 'countdown') { next.target = v('f_target'); next.done_text = v('f_done'); }
+      else if (TYPE === 'clock') { next.tz = v('f_tz'); next.hour12 = v('f_h12'); next.show_date = v('f_date'); }
+      else if (TYPE === 'progress') { next.range = v('f_range'); next.start = v('f_start'); next.end = v('f_end'); next.accent = v('f_accent'); }
+      else if (TYPE === 'quotes') { next.quotes_text = v('f_quotes'); next.interval = v('f_interval'); }
       var token = localStorage.getItem(TOKEN_KEY);
       var btn = document.getElementById('save'); btn.textContent = 'Saving…'; btn.disabled = true;
       fetch('/w/' + WID + '/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify(next)
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(next)
       }).then(function (r) {
         if (r.status === 401) { localStorage.removeItem(TOKEN_KEY); throw new Error('expired'); }
         if (!r.ok) throw new Error('save failed');
         return r.json();
-      }).then(function (data) {
-        cfg = data.config; build(); panel.classList.remove('open');
-      }).catch(function (e) {
+      }).then(function (data) { cfg = data.config; build(); panel.classList.remove('open'); })
+      .catch(function (e) {
         btn.disabled = false; btn.textContent = 'Save';
         if (e.message === 'expired') { alert('Editing session expired — please unlock again.'); panel.classList.remove('open'); }
         else alert('Could not save. ' + e.message);
@@ -185,13 +278,13 @@
     }
 
     function unlock() {
+      awaitingUnlock = true;
       var w = window.open('/w/' + WID + '/unlock', 'nsw_unlock', 'width=460,height=620');
-      if (!w) alert('Please allow pop-ups for this site to unlock editing.');
+      if (!w) { awaitingUnlock = false; alert('Please allow pop-ups for this site to unlock editing.'); }
     }
 
     document.getElementById('gear').onclick = function () {
-      if (localStorage.getItem(TOKEN_KEY)) openEditor();
-      else unlock();
+      if (localStorage.getItem(TOKEN_KEY)) openEditor(); else unlock();
     };
 
     window.addEventListener('message', function (e) {
@@ -199,7 +292,7 @@
       var d = e.data;
       if (d && d.source === 'notion-sync-widget' && d.widgetId === WID && d.token) {
         localStorage.setItem(TOKEN_KEY, d.token);
-        openEditor();
+        if (awaitingUnlock) { awaitingUnlock = false; openEditor(); }
       }
     });
 
