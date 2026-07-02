@@ -318,16 +318,21 @@ async def sync_now(
 # ─── Widgets ──────────────────────────────────────────────────────────────────
 
 WIDGET_STYLES = {
-    "countdown": ["blocks", "inline", "minimal"],
-    "clock": ["digital", "analog"],
-    "progress": ["bar", "ring", "minimal"],
+    "countdown": ["blocks", "flip", "inline", "minimal", "text"],
+    "clock": ["digital", "analog", "flip"],
+    "progress": ["bar", "ring", "dots", "minimal"],
     "quotes": ["card", "minimal"],
 }
 WIDGET_TYPES = set(WIDGET_STYLES)
+WIDGET_FONTS = {"sans", "serif", "mono", "rounded", "handwritten"}
+WIDGET_BG_MODES = {"solid", "transparent", "gradient"}
 
 
 def _default_widget_config(widget_type: str) -> dict:
-    base = {"bg": "#6366f1", "color": "#ffffff", "style": WIDGET_STYLES[widget_type][0]}
+    base = {
+        "bg": "#6366f1", "bg2": "#8b5cf6", "bg_mode": "solid", "color": "#ffffff",
+        "font": "sans", "style": WIDGET_STYLES[widget_type][0],
+    }
     if widget_type == "clock":
         return {**base, "title": "", "hour12": True, "show_date": True, "tz": ""}
     if widget_type == "progress":
@@ -338,7 +343,7 @@ def _default_widget_config(widget_type: str) -> dict:
             "quotes": [{"text": "Stay hungry, stay foolish.", "author": "Steve Jobs"}],
         }
     target = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M")
-    return {**base, "title": "Countdown", "target": target, "done_text": "It's here!"}
+    return {**base, "title": "Countdown", "target": target, "done_text": "It's here!", "accent": "#3b82f6"}
 
 
 def _parse_quotes(text: str) -> list[dict]:
@@ -366,7 +371,13 @@ def _build_widget_config(widget_type: str, src, base: dict | None = None) -> dic
     cfg = dict(base or {})
     cfg["title"] = (src.get("title") or "").strip()
     cfg["bg"] = src.get("bg") or "#6366f1"
+    cfg["bg2"] = src.get("bg2") or "#8b5cf6"
     cfg["color"] = src.get("color") or "#ffffff"
+
+    bg_mode = src.get("bg_mode")
+    cfg["bg_mode"] = bg_mode if bg_mode in WIDGET_BG_MODES else "solid"
+    font = src.get("font")
+    cfg["font"] = font if font in WIDGET_FONTS else "sans"
 
     allowed = WIDGET_STYLES.get(widget_type, [])
     style = src.get("style")
@@ -378,6 +389,7 @@ def _build_widget_config(widget_type: str, src, base: dict | None = None) -> dic
     if widget_type == "countdown":
         cfg["target"] = src.get("target") or ""
         cfg["done_text"] = (src.get("done_text") or "").strip()
+        cfg["accent"] = src.get("accent") or "#3b82f6"
     elif widget_type == "clock":
         cfg["tz"] = (src.get("tz") or "").strip()
         cfg["hour12"] = truthy(src.get("hour12"))
