@@ -31,4 +31,8 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # Comma-separated emails allowed to view operator-only pages (e.g. /logs).
+    # Empty = nobody; the pages 404 for everyone until set.
+    admin_emails: str = ""
+
 settings = Settings()  # raises on startup only if a *required* field is missing

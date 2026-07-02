@@ -1,7 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Header
 
-from src.config import settings
-from src.webhooks.common import WebhookPayload, build_context, record_sync_run, source_label
+from src.webhooks.common import (
+    WebhookPayload,
+    build_context,
+    record_sync_run,
+    source_label,
+    verify_webhook_secret,
+)
 from src.operations.courses import sync_courses_and_assignments
 from src.operations.semesters import get_current_semester, reconcile_semester_status, update_view_filters
 
@@ -30,8 +35,7 @@ async def refresh(
     background_tasks: BackgroundTasks,
     authorization: str = Header(),
 ):
-    if authorization != f"Bearer {settings.webhook_secret}":
-        raise HTTPException(status_code=401)
+    verify_webhook_secret(authorization)
 
     background_tasks.add_task(_run_refresh, payload.data.id, source_label(payload.source.type))
     return {"status": "queued"}

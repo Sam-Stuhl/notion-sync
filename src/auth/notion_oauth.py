@@ -13,12 +13,13 @@ def _redirect_uri() -> str:
     return f"{settings.app_base_url}/auth/callback"
 
 
-def auth_url() -> str:
+def auth_url(state: str) -> str:
     params = {
         "client_id": settings.notion_oauth_client_id,
         "response_type": "code",
         "owner": "user",
         "redirect_uri": _redirect_uri(),
+        "state": state,
     }
     return f"{_AUTHORIZE_URL}?{urlencode(params)}"
 

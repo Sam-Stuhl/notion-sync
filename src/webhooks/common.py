@@ -1,9 +1,12 @@
+import hmac
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
+from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
+from src.config import settings
 from src.clients.canvas import CanvasClient  # noqa: F401 — registers "canvas" in SIS registry
 from src.clients.notion import NotionClient
 from src.clients.sis_client import build
@@ -50,6 +53,13 @@ _SOURCE_LABELS: dict[str, str] = {
 
 def source_label(source_type: str) -> str:
     return _SOURCE_LABELS.get(source_type, source_type)
+
+
+def verify_webhook_secret(authorization: str) -> None:
+    """Constant-time check of the shared webhook bearer. Raises 401 on mismatch."""
+    expected = f"Bearer {settings.webhook_secret}"
+    if not authorization or not hmac.compare_digest(authorization, expected):
+        raise HTTPException(status_code=401)
 
 
 @asynccontextmanager

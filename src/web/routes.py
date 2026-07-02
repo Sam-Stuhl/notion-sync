@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from urllib.parse import urlsplit
 
-from src.auth.middleware import require_user
+from src.auth.middleware import require_admin, require_user
 from src.auth.sessions import (
     create_widget_edit_token,
     verify_session_token,
@@ -234,10 +234,11 @@ async def dashboard(
 @router.get("/logs")
 async def logs_page(
     request: Request,
-    user: User = Depends(require_user),
+    user: User = Depends(require_admin),
     lines: int = 200,
 ):
     import pathlib
+    lines = max(1, min(lines, 1000))
     log_file = pathlib.Path("logs/notion-sync.log")
     log_lines: list[str] = []
     if log_file.exists():

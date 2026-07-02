@@ -1,5 +1,8 @@
+import hmac
+import secrets
+
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +20,22 @@ from src.db.session import get_session
 router = APIRouter(prefix="/auth")
 
 
+_STATE_COOKIE = "ns_oauth_state"
+
+
 @router.get("/login")
 async def login():
-    return RedirectResponse(url=auth_url(), status_code=302)
+    state = secrets.token_urlsafe(32)
+    response = RedirectResponse(url=auth_url(state), status_code=302)
+    response.set_cookie(
+        _STATE_COOKIE,
+        state,
+        httponly=True,
+        secure=settings.app_base_url.startswith("https"),
+        samesite="lax",
+        max_age=600,
+    )
+    return response
 
 
 @router.get("/logout")
@@ -31,11 +47,17 @@ async def logout():
 
 @router.get("/callback")
 async def callback(
+    request: Request,
     db: AsyncSession = Depends(get_session),
     code: str | None = None,
+    state: str | None = None,
     error: str | None = None,
 ):
     if error or not code:
+        return RedirectResponse(url="/", status_code=302)
+
+    expected_state = request.cookies.get(_STATE_COOKIE)
+    if not state or not expected_state or not hmac.compare_digest(state, expected_state):
         return RedirectResponse(url="/", status_code=302)
 
     try:
@@ -83,4 +105,5 @@ async def callback(
         samesite="lax",
         max_age=90 * 24 * 3600,
     )
+    response.delete_cookie(_STATE_COOKIE)
     return response

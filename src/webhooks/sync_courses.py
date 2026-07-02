@@ -1,8 +1,13 @@
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Header
 
 from src.clients import notion_props
-from src.config import settings
-from src.webhooks.common import WebhookPayload, build_context, record_sync_run, source_label
+from src.webhooks.common import (
+    WebhookPayload,
+    build_context,
+    record_sync_run,
+    source_label,
+    verify_webhook_secret,
+)
 from src.operations.courses import sync_courses, _read_title
 
 router = APIRouter()
@@ -29,8 +34,7 @@ async def handle_sync_courses(
     background_tasks: BackgroundTasks,
     authorization: str = Header(),
 ):
-    if authorization != f"Bearer {settings.webhook_secret}":
-        raise HTTPException(status_code=401)
+    verify_webhook_secret(authorization)
 
     background_tasks.add_task(_run_sync_courses, payload.data.id, source_label(payload.source.type))
     return {"status": "queued"}
