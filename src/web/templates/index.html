@@ -1,25 +1,72 @@
 {% extends "base.html" %}
 
-{% block title %}Notion Sync — Keep Canvas in sync with Notion{% endblock %}
+{% block title %}Notion Sync — Your coursework, on your Notion planner{% endblock %}
+
+{% block main_class %}{% endblock %}
 
 {% block content %}
-<div class="hero min-h-[65vh]">
-    <div class="hero-content text-center">
-        <div class="max-w-lg">
-            <h1 class="text-5xl font-bold tracking-tight">Canvas → Notion</h1>
-            <p class="py-6 text-lg text-base-content/60 leading-relaxed">
-                Automatically sync your courses, assignments, and deadlines from Canvas
-                into your Notion workspace. Stay organized without the manual work.
-            </p>
-            <div class="flex flex-col items-center gap-3">
-                <a href="/auth/login" class="btn btn-primary btn-lg">
-                    Get started with Notion
-                </a>
-                <a href="/auth/login" class="text-sm text-base-content/40 hover:text-base-content/60 transition-colors">
-                    Already have an account? Log in →
-                </a>
-            </div>
+{% include "skyline_cover.html" %}
+
+<div class="mx-auto max-w-4xl px-4">
+
+    <div class="ns-titlebar">
+        <div class="ns-badge-ico">
+            <svg width="32" height="32" viewBox="0 0 16 16" shape-rendering="crispEdges" fill="none" aria-hidden="true">
+                <rect class="cal-body" x="1" y="2" width="14" height="13" rx="1.5"/>
+                <rect class="cal-head" x="1" y="2" width="14" height="4"/>
+                <rect class="cal-dot" x="3" y="8" width="2" height="2"/><rect class="cal-dot" x="7" y="8" width="2" height="2"/><rect class="cal-dot" x="11" y="8" width="2" height="2"/>
+                <rect class="cal-dot" x="3" y="11" width="2" height="2"/><rect class="cal-dot" x="7" y="11" width="2" height="2"/>
+            </svg>
+        </div>
+        <p class="ns-eyebrow mb-4">Learning platforms → Notion · for students</p>
+        <h1 class="ns-display text-5xl sm:text-6xl font-semibold leading-[1.03] mb-4">
+            Your coursework, on your<br><span class="italic text-secondary">planner</span> desk.
+        </h1>
+        <p class="text-lg text-base-content/60 leading-relaxed max-w-md mb-7">
+            Courses, assignments, and deadlines sync from your learning platform
+            straight into your Notion planner. You just open Notion.
+        </p>
+        <div class="flex items-center gap-5 flex-wrap">
+            <a href="/auth/login" class="btn btn-primary">Connect Notion &rarr;</a>
+            <span class="text-sm text-base-content/50">
+                Already set up? <a href="/auth/login" class="link link-hover text-primary">Go to dashboard</a>
+            </span>
+        </div>
+
+        <div class="ns-tabs mt-11 mb-2">
+            <div class="tab active"><span class="ic">▦</span> This week</div>
+            <div class="tab"><span class="ic">◷</span> Courses</div>
+            <div class="tab"><span class="ic">✎</span> Assignments</div>
+            <div class="tab"><span class="ic">⚑</span> Deadlines</div>
         </div>
     </div>
+
+    {# ── Signature: week ruler (illustrative) ─────────────────────── #}
+    <section class="mt-9 mb-10">
+        <div class="flex items-baseline justify-between mb-4">
+            <span class="ns-display text-xl font-semibold text-primary">This week</span>
+            <span class="ns-mono text-xs text-base-content/50">Deadlines, pulled from your courses</span>
+        </div>
+        <div class="ns-ruler card bg-base-200 border border-base-300 px-6 pt-6 pb-5">
+            <div class="track">
+                <span class="tick major" style="left:7%"></span><span class="tick" style="left:14%"></span>
+                <span class="tick major" style="left:21%"></span><span class="tick" style="left:28%"></span>
+                <span class="tick major" style="left:36%"></span><span class="tick" style="left:43%"></span>
+                <span class="tick major" style="left:50%"></span><span class="tick" style="left:57%"></span>
+                <span class="tick major" style="left:64%"></span><span class="tick" style="left:71%"></span>
+                <span class="tick major" style="left:79%"></span><span class="tick" style="left:86%"></span>
+                <span class="tick major" style="left:93%"></span>
+                <div class="baseline"></div>
+                <span class="daylabel" style="left:7%">MON</span><span class="daylabel" style="left:21%">TUE</span>
+                <span class="daylabel" style="left:36%">WED</span><span class="daylabel" style="left:50%">THU</span>
+                <span class="daylabel" style="left:64%">FRI</span><span class="daylabel" style="left:79%">SAT</span>
+                <span class="daylabel" style="left:93%">SUN</span>
+                <span class="flag" style="left:21%"><span class="lbl"><b>CS201</b>Lab 3</span><span class="dot"></span></span>
+                <span class="flag warn" style="left:50%"><span class="lbl"><b>MATH240</b>Pset 4</span><span class="dot"></span></span>
+                <span class="flag" style="left:64%"><span class="lbl"><b>HIST</b>Essay</span><span class="dot"></span></span>
+            </div>
+        </div>
+    </section>
+
 </div>
 {% endblock %}

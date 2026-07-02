@@ -1,60 +1,158 @@
-/* ─── Custom DaisyUI Theme ───────────────────────────────────────── */
+/* ─── Themes ──────────────────────────────────────────────────────
+   Two DaisyUI v4 themes in oklch channels. Every existing color
+   utility (bg-base-200, text-base-content/60, btn-primary, badge…)
+   flips between modes automatically. Custom --ns-* vars drive the
+   pixel skyline and planner components.
+   ────────────────────────────────────────────────────────────────*/
 
-[data-theme="notion-sync"] {
+[data-theme="planner-dark"] {
   color-scheme: dark;
+  --p:65.454% 0.1562 262.50;  --pc:18.396% 0.0304 265.82;
+  --s:74.471% 0.1161 264.16;  --sc:18.396% 0.0304 265.82;
+  --a:74.471% 0.1161 264.16;  --ac:18.396% 0.0304 265.82;
+  --n:27.412% 0.0230 270.44;  --nc:93.393% 0.0071 268.55;
+  --b1:20.472% 0.0104 268.17; --b2:23.977% 0.0160 269.00; --b3:30.148% 0.0190 268.05;
+  --bc:93.393% 0.0071 268.55;
+  --in:65.454% 0.1562 262.50; --inc:18.396% 0.0304 265.82;
+  --su:71.797% 0.1083 161.16; --suc:17.364% 0.0206 159.69;
+  --wa:79.045% 0.1386 85.24;  --wac:22.477% 0.0379 84.03;
+  --er:66.434% 0.1490 20.95;  --erc:20.872% 0.0469 21.95;
 
-  --color-primary:           oklch(59.28% 0.2337 277.72);
-  --color-primary-content:   oklch(100%   0      0);
-  --color-secondary:         oklch(70.14% 0.1912 293.55);
-  --color-secondary-content: oklch(100%   0      0);
-  --color-accent:            oklch(83.41% 0.1291 221.57);
-  --color-accent-content:    oklch(10%    0.01   221.57);
-  --color-neutral:           oklch(18.43% 0.0059 264.44);
-  --color-neutral-content:   oklch(90.89% 0.003  264.44);
-  --color-base-100:          oklch(7.56%  0.003  264.44);
-  --color-base-200:          oklch(11.43% 0.005  264.44);
-  --color-base-300:          oklch(15.22% 0.006  264.44);
-  --color-base-content:      oklch(90.89% 0.003  264.44);
-  --color-info:              oklch(59.56% 0.1892 252.47);
-  --color-info-content:      oklch(100%   0      0);
-  --color-success:           oklch(69.28% 0.1807 162.82);
-  --color-success-content:   oklch(100%   0      0);
-  --color-warning:           oklch(75.52% 0.1621 75.29);
-  --color-warning-content:   oklch(20%    0.04   75.29);
-  --color-error:             oklch(62.78% 0.219  25.33);
-  --color-error-content:     oklch(100%   0      0);
+  --ns-sky-0:#C7D6E8; --ns-sky-1:#8CA3C4; --ns-sky-2:#4E6188; --ns-sky-3:#2A3550; --ns-glow:#F3D9A0;
+  --ns-bldg-back:#42537A; --ns-bldg-back2:#4A5C86; --ns-bldg-front:#232F49;
+  --ns-win-warm:#F0CE86; --ns-win-cool:#9DBDEB;
+  --ns-road-edge:#1A2236; --ns-road:#141B2C; --ns-road-line:#2E3B57; --ns-taillight:#E3B341;
+  --ns-scan:.35;
+  --ns-flip-bg:#0E1017; --ns-flip-shadow:inset 0 -6px 8px rgba(0,0,0,.35);
+  --ns-margin:none;
+}
 
-  --radius-selector: 0.5rem;
-  --radius-field:    0.375rem;
-  --radius-box:      0.5rem;
-  --size-selector:   0.25rem;
-  --size-field:      0.25rem;
-  --border:          1px;
-  --depth:           0;
-  --noise:           0;
+[data-theme="planner-light"] {
+  color-scheme: light;
+  --p:53.389% 0.1885 263.34;  --pc:100.000% 0.0000 89.88;
+  --s:55.163% 0.2471 266.00;  --sc:100.000% 0.0000 89.88;
+  --a:55.163% 0.2471 266.00;  --ac:100.000% 0.0000 89.88;
+  --n:94.594% 0.0165 91.55;   --nc:26.085% 0.0238 267.11;
+  --b1:95.799% 0.0124 91.52;  --b2:98.173% 0.0095 93.57;  --b3:90.125% 0.0212 88.73;
+  --bc:26.085% 0.0238 267.11;
+  --in:53.389% 0.1885 263.34; --inc:100.000% 0.0000 89.88;
+  --su:55.322% 0.1067 157.99; --suc:100.000% 0.0000 89.88;
+  --wa:62.635% 0.1248 70.45;  --wac:100.000% 0.0000 89.88;
+  --er:55.343% 0.1739 38.40;  --erc:100.000% 0.0000 89.88;
+
+  --ns-sky-0:#E7F1FB; --ns-sky-1:#CBDEF2; --ns-sky-2:#ADC9E6; --ns-sky-3:#EBE0CB; --ns-glow:#FFF1CE;
+  --ns-bldg-back:#A6B9D2; --ns-bldg-back2:#BAC9DD; --ns-bldg-front:#7285A2;
+  --ns-win-warm:#F6E7BE; --ns-win-cool:#DCEAF8;
+  --ns-road-edge:#C4CAD2; --ns-road:#D3D8DF; --ns-road-line:#AEB6C2; --ns-taillight:#E06B4A;
+  --ns-scan:.08;
+  --ns-flip-bg:#FFFFFF; --ns-flip-shadow:inset 0 -5px 7px rgba(0,0,0,.06);
+  --ns-margin:linear-gradient(90deg,transparent 71px,#E7C9B8 71px,#E7C9B8 72px,transparent 72px);
+}
+
+/* shared rounding / component tuning for both themes */
+[data-theme="planner-dark"], [data-theme="planner-light"] {
+  --rounded-box:0.75rem; --rounded-btn:0.5rem; --rounded-badge:1rem;
+  --animation-btn:0.2s; --animation-input:0.2s; --btn-focus-scale:0.97;
+  --border-btn:1px; --tab-radius:0.5rem;
 }
 
 /* ─── Typography ─────────────────────────────────────────────────── */
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family:'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  background-image:var(--ns-margin);
+  background-attachment:fixed;
+}
+@media (max-width:720px){ body{ background-image:none; } }
+
+h1,h2,h3,h4{ letter-spacing:-0.02em; font-weight:600; }
+
+.ns-display{ font-family:'Newsreader', Georgia, serif; font-optical-sizing:auto; letter-spacing:-0.015em; }
+.ns-mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+.ns-eyebrow{
+  font-family:'IBM Plex Mono', ui-monospace, monospace;
+  font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:oklch(var(--bc) / .55);
 }
 
-h1, h2, h3, h4 {
-  letter-spacing: -0.02em;
-  font-weight: 600;
-}
+/* ─── Pixel skyline cover ────────────────────────────────────────── */
+
+.ns-cover{ position:relative; width:100%; height:min(38vh,300px); overflow:hidden; border-bottom:1px solid oklch(var(--b3)); }
+.ns-cover svg{ position:absolute; inset:0; width:100%; height:100%; }
+.ns-cover .s0{stop-color:var(--ns-sky-0);} .ns-cover .s1{stop-color:var(--ns-sky-1);}
+.ns-cover .s2{stop-color:var(--ns-sky-2);} .ns-cover .s3{stop-color:var(--ns-sky-3);}
+.ns-cover .g0{stop-color:var(--ns-glow); stop-opacity:.55;} .ns-cover .g1{stop-color:var(--ns-glow); stop-opacity:0;}
+.ns-cover .bldg-back{fill:var(--ns-bldg-back);}
+.ns-cover .bldg-back2{fill:var(--ns-bldg-back2);}
+.ns-cover .bldg-front{fill:var(--ns-bldg-front);}
+.ns-cover .winWarm{fill:var(--ns-win-warm);}
+.ns-cover .winCool{fill:var(--ns-win-cool);}
+.ns-cover .road-edge{fill:var(--ns-road-edge);} .ns-cover .road{fill:var(--ns-road);}
+.ns-cover .road-line{fill:var(--ns-road-line);} .ns-cover .taillight{fill:var(--ns-taillight);}
+.ns-cover .scanlines{ position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 2px,transparent 2px 4px);
+  mix-blend-mode:multiply; opacity:var(--ns-scan); }
+.ns-cover .fade{ position:absolute; left:0; right:0; bottom:0; height:70px;
+  background:linear-gradient(to bottom,transparent,oklch(var(--b1))); }
+
+/* title block that overlaps the cover, like the Notion planner */
+.ns-titlebar{ position:relative; margin-top:-46px; z-index:5; }
+.ns-badge-ico{ width:60px; height:60px; border-radius:14px; background:oklch(var(--p));
+  display:grid; place-items:center; box-shadow:0 8px 24px rgba(0,0,0,.35); margin-bottom:16px; }
+.ns-badge-ico .cal-body{ fill:#F5F7FB; }
+.ns-badge-ico .cal-head{ fill:#BFCDEC; }
+.ns-badge-ico .cal-dot{ fill:oklch(var(--p)); }
+
+/* nav brand pixel mark */
+.ns-mark .m-body{ fill:oklch(var(--p)); }
+.ns-mark .m-head{ fill:oklch(var(--p) / .6); }
+.ns-mark .m-dot{ fill:oklch(var(--b1)); }
+
+/* ─── Section tabs (echo the planner) ────────────────────────────── */
+.ns-tabs{ display:flex; gap:26px; flex-wrap:wrap; }
+.ns-tabs .tab{ display:flex; align-items:center; gap:8px; font-weight:600; font-size:15px;
+  color:oklch(var(--bc) / .5); cursor:pointer; background:none; border:0; padding:0; }
+.ns-tabs .tab .ic{ color:oklch(var(--p)); }
+.ns-tabs .tab.active{ color:oklch(var(--bc)); }
+
+/* ─── Week ruler (signature) ─────────────────────────────────────── */
+.ns-ruler{ position:relative; }
+.ns-ruler .track{ position:relative; height:104px; }
+.ns-ruler .baseline{ position:absolute; left:0; right:0; top:66px; height:2px;
+  background:linear-gradient(90deg,oklch(var(--p)),oklch(var(--p) / .3)); }
+.ns-ruler .tick{ position:absolute; top:68px; width:2px; height:9px; background:oklch(var(--bc) / .35); }
+.ns-ruler .tick.major{ top:68px; height:13px; background:oklch(var(--bc) / .55); }
+.ns-ruler .daylabel{ position:absolute; top:88px; font-family:'IBM Plex Mono',monospace;
+  font-size:11px; color:oklch(var(--bc) / .5); transform:translateX(-50%); }
+.ns-ruler .flag{ position:absolute; top:6px; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; }
+.ns-ruler .flag .lbl{ font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.35;
+  color:oklch(var(--bc) / .8); white-space:nowrap; text-align:center; margin-bottom:7px; }
+.ns-ruler .flag .lbl b{ display:block; font-weight:600; color:oklch(var(--s)); }
+.ns-ruler .flag .dot{ width:11px; height:11px; border-radius:3px; background:oklch(var(--p));
+  box-shadow:0 0 0 4px oklch(var(--p) / .18), 0 0 12px oklch(var(--p) / .5); }
+.ns-ruler .flag.warn .lbl b{ color:oklch(var(--wa)); }
+.ns-ruler .flag.warn .dot{ background:oklch(var(--wa));
+  box-shadow:0 0 0 4px oklch(var(--wa) / .2), 0 0 12px oklch(var(--wa) / .4); }
+
+/* ─── Flip counter (echo the countdown widget) ───────────────────── */
+.ns-flip{ display:flex; align-items:center; gap:5px; }
+.ns-flip .d{ font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:18px;
+  background:var(--ns-flip-bg); border:1px solid oklch(var(--b3)); border-radius:6px; padding:4px 8px;
+  color:oklch(var(--s)); position:relative; box-shadow:var(--ns-flip-shadow); }
+.ns-flip .d::after{ content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,.28); }
+.ns-flip .u{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:oklch(var(--bc) / .5); margin-left:4px; }
+
+/* ─── Course-code tag ────────────────────────────────────────────── */
+.ns-code{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:oklch(var(--s));
+  border:1px solid oklch(var(--p) / .3); background:oklch(var(--p) / .1); padding:3px 8px; border-radius:6px; }
 
 /* ─── Global refinements ─────────────────────────────────────────── */
+.card{ box-shadow:none; }
+.navbar{ min-height:3.5rem; }
 
-/* Remove shadows from cards in dark mode — use bg contrast instead */
-.card {
-  box-shadow: none;
-}
-
-/* Tighter navbar */
-.navbar {
-  min-height: 3.5rem;
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }

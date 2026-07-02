@@ -1,14 +1,28 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="notion-sync">
+<html lang="en" data-theme="planner-dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Notion Sync{% endblock %}</title>
 
-    <!-- Fonts -->
+    <!-- Set theme before paint to avoid a flash -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('ns-theme');
+                if (!saved) {
+                    saved = window.matchMedia('(prefers-color-scheme: light)').matches
+                        ? 'planner-light' : 'planner-dark';
+                }
+                document.documentElement.dataset.theme = saved;
+            } catch (e) {}
+        })();
+    </script>
+
+    <!-- Fonts: Newsreader (display) · Inter (body) · IBM Plex Mono (utility) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- DaisyUI + Tailwind -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
@@ -19,6 +33,8 @@
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
+                        serif: ['Newsreader', 'Georgia', 'serif'],
+                        mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
                     }
                 }
             }
@@ -31,17 +47,24 @@
     <!-- Lucide icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-    <!-- App styles (custom theme + typography) -->
-    <link href="/static/app.css" rel="stylesheet">
+    <!-- App styles (themes + typography + planner components) -->
+    <link href="/static/app.css?v=2" rel="stylesheet">
 </head>
 <body class="min-h-screen bg-base-100 font-sans antialiased">
 
-    <nav class="border-b border-base-300 bg-base-100">
+    <nav class="border-b border-base-300 bg-base-100/85 backdrop-blur sticky top-0 z-20">
         <div class="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between">
-            <a href="/" class="text-sm font-semibold tracking-tight text-base-content hover:text-primary transition-colors">
-                notion-sync
+            <a href="/" class="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-base-content hover:text-primary transition-colors">
+                <svg class="ns-mark" width="18" height="18" viewBox="0 0 16 16" shape-rendering="crispEdges" fill="none" aria-hidden="true">
+                    <rect class="m-body" x="1" y="2" width="14" height="13" rx="1.5"/>
+                    <rect class="m-head" x="1" y="2" width="14" height="4"/>
+                    <rect class="m-body" x="4" y="0" width="2" height="3"/><rect class="m-body" x="10" y="0" width="2" height="3"/>
+                    <rect class="m-dot" x="3" y="8" width="2" height="2"/><rect class="m-dot" x="7" y="8" width="2" height="2"/><rect class="m-dot" x="11" y="8" width="2" height="2"/>
+                    <rect class="m-dot" x="3" y="11" width="2" height="2"/><rect class="m-dot" x="7" y="11" width="2" height="2"/>
+                </svg>
+                notion·sync
             </a>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
                 {% if user is defined and user %}
                     <a href="/widgets" class="text-sm text-base-content/40 hover:text-base-content/70 transition-colors hidden sm:inline">
                         Widgets
@@ -52,6 +75,12 @@
                     <span class="text-sm text-base-content/40 hidden sm:inline">
                         {{ user.display_name or user.email }}
                     </span>
+                {% endif %}
+                <button id="theme-toggle" type="button" aria-label="Toggle light and dark mode"
+                        class="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-base-content">
+                    <span data-theme-icon class="text-base leading-none">☾</span>
+                </button>
+                {% if user is defined and user %}
                     <a href="/auth/logout" class="text-sm text-base-content/40 hover:text-base-content/70 transition-colors">
                         Sign out
                     </a>
@@ -62,7 +91,7 @@
         </div>
     </nav>
 
-    <main class="mx-auto max-w-4xl px-4 py-10">
+    <main class="{% block main_class %}mx-auto max-w-4xl px-4 py-10{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
@@ -78,6 +107,21 @@
 
     <script>
         lucide.createIcons();
+
+        // Theme toggle with persistence
+        (function () {
+            const root = document.documentElement;
+            const btn = document.getElementById('theme-toggle');
+            const icon = btn.querySelector('[data-theme-icon]');
+            const paint = () => { icon.textContent = root.dataset.theme === 'planner-light' ? '☀' : '☾'; };
+            paint();
+            btn.addEventListener('click', () => {
+                const next = root.dataset.theme === 'planner-light' ? 'planner-dark' : 'planner-light';
+                root.dataset.theme = next;
+                try { localStorage.setItem('ns-theme', next); } catch (e) {}
+                paint();
+            });
+        })();
 
         // Re-init icons and open modal when modal content is swapped in
         document.addEventListener('htmx:afterSwap', (e) => {

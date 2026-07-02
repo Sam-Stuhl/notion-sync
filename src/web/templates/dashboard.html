@@ -7,21 +7,24 @@
 
     {# ── Status strip ─────────────────────────────────────────────── #}
     {% if status %}
-    <div class="flex items-center justify-between px-4 py-3 rounded-lg
-        {% if status.type == 'success' %}bg-success/5 border border-success/15
-        {% elif status.type == 'warning' %}bg-warning/5 border border-warning/15
-        {% else %}bg-base-200 border border-base-300{% endif %}">
-        <div class="flex items-center gap-2">
+    <div class="flex items-center justify-between gap-4 px-5 py-3.5 rounded-xl border
+        {% if status.type == 'success' %}bg-success/5 border-success/20
+        {% elif status.type == 'warning' %}bg-warning/5 border-warning/20
+        {% else %}bg-base-200 border-base-300{% endif %}">
+        <div class="flex items-center gap-3 min-w-0">
             {% if status.type == 'success' %}
-                <i data-lucide="check-circle" class="w-4 h-4 text-success flex-shrink-0"></i>
+                <span class="relative flex-shrink-0 w-2 h-2">
+                    <span class="absolute inset-0 rounded-full bg-success"></span>
+                    <span class="absolute -inset-1 rounded-full border border-success/50 animate-ping"></span>
+                </span>
             {% elif status.type == 'warning' %}
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-warning flex-shrink-0"></i>
             {% else %}
                 <i data-lucide="circle-dot" class="w-4 h-4 text-base-content/30 flex-shrink-0"></i>
             {% endif %}
-            <span class="text-sm text-base-content/70">{{ status.message }}</span>
+            <span class="text-sm text-base-content/75 truncate">{{ status.message }}</span>
         </div>
-        <button class="btn btn-ghost btn-xs gap-1.5 text-base-content/40 hover:text-base-content"
+        <button class="btn btn-ghost btn-xs gap-1.5 text-base-content/40 hover:text-base-content flex-shrink-0"
                 hx-post="/sync/now"
                 hx-target="#activity-feed"
                 hx-swap="outerHTML"
@@ -37,7 +40,7 @@
     {% if not integrations %}
     <div class="card bg-base-200 border border-base-300">
         <div class="card-body p-6">
-            <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wider mb-4">Get Started</h2>
+            <h2 class="ns-eyebrow mb-4">Get started</h2>
             <div class="space-y-3">
                 <div class="flex items-center gap-3">
                     <i data-lucide="check-circle-2" class="w-4 h-4 text-success flex-shrink-0"></i>
@@ -49,7 +52,7 @@
                             hx-get="/integrations/new"
                             hx-target="#integration-modal-content"
                             hx-swap="innerHTML">
-                        Add an integration
+                        Connect your learning platform
                     </button>
                 </div>
                 <div class="flex items-center gap-3">
@@ -65,7 +68,7 @@
     <div class="card bg-base-200 border border-base-300">
         <div class="card-body p-6">
             <div class="flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wider">Notion Workspace</h2>
+                <h2 class="ns-display text-lg font-semibold text-primary">Notion workspace</h2>
                 <span class="badge badge-success badge-sm">Connected</span>
             </div>
             {% if notion %}
