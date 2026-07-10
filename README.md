@@ -69,15 +69,16 @@ alembic upgrade head
 uvicorn src.main:app --reload
 ```
 
-## Deployment (Fly.io)
+## Deployment
+
+The service ships as a Docker container (see `Dockerfile`). Build it, run it with the environment variables above set, and put it behind an HTTPS reverse proxy or tunnel.
 
 ```bash
-fly launch          # first time only
-fly secrets set NOTION_OAUTH_CLIENT_ID=... NOTION_OAUTH_CLIENT_SECRET=... DATABASE_URL=... ENCRYPTION_KEY=... JWT_SECRET=...
-fly deploy
+docker build -t notion-sync .
+docker run --env-file .env -p 8000:8000 notion-sync
 ```
 
-The app needs to be reachable from the public internet so Notion can complete OAuth redirects and POST button webhooks.
+It has to be reachable from the public internet for two reasons: users complete the Notion OAuth redirect against it, and Notion database buttons POST webhooks to it.
 
 ## Connecting a Notion button
 
