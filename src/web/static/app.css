@@ -105,11 +105,6 @@ h1,h2,h3,h4{ letter-spacing:-0.02em; font-weight:600; }
 .ns-badge-ico .cal-head{ fill:#BFCDEC; }
 .ns-badge-ico .cal-dot{ fill:oklch(var(--p)); }
 
-/* nav brand pixel mark */
-.ns-mark .m-body{ fill:oklch(var(--p)); }
-.ns-mark .m-head{ fill:oklch(var(--p) / .6); }
-.ns-mark .m-dot{ fill:oklch(var(--b1)); }
-
 /* ─── Section tabs (echo the planner) ────────────────────────────── */
 .ns-tabs{ display:flex; gap:26px; flex-wrap:wrap; }
 .ns-tabs .tab{ display:flex; align-items:center; gap:8px; font-weight:600; font-size:15px;
